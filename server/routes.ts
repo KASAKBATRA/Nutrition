@@ -1,0 +1,495 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./db";
+import { storage } from "./storage";
+import { generateChatResponse } from "./openai";
+import { 
+  registerUser, 
+  verifyOTP, 
+  loginUser, 
+  initiatePasswordReset, 
+  resetPassword, 
+  resendOTP,
+  registerSchema,
+  loginSchema,
+  otpVerificationSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema
+} from "./auth";
+import { z } from "zod";
+
+// Session configuration
+const PgSession = connectPgSimple(session);
+
+function getUserId(req: any) {
+  return req.session?.userId;
+}
+
+function requireAuth(req: any, res: any, next: any) {
+  if (!req.session?.userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  next();
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Session middleware
+  app.use(session({
+    store: new PgSession({
+      pool,
+      tableName: 'sessions',
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || 'nutricare-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    },
+  }));
+
+  // Auth routes
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const validatedData = registerSchema.parse(req.body);
+      const result = await registerUser(validatedData);
+      res.json({ 
+        message: "Registration successful. Please check your email for verification code.",
+        email: result.email 
+      });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      res.status(400).json({ 
+        message: error.message || "Registration failed",
+        errors: error.errors || []
+      });
+    }
+  });
+
+  app.post('/api/auth/verify-otp', async (req, res) => {
+    try {
+      const { email, otp } = otpVerificationSchema.parse(req.body);
+      await verifyOTP(email, otp, 'registration');
+      res.json({ message: "Email verified successfully. You can now log in." });
+    } catch (error: any) {
+      console.error("OTP verification error:", error);
+      res.status(400).json({ message: error.message || "OTP verification failed" });
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = loginSchema.parse(req.body);
+      const user = await loginUser(email, password);
+      
+      req.session.userId = user.id;
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        res.json({ 
+          message: "Login successful",
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          }
+        });
+      });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      res.status(400).json({ message: error.message || "Login failed" });
+    }
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Logout successful" });
+    });
+  });
+
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = forgotPasswordSchema.parse(req.body);
+      await initiatePasswordReset(email);
+      res.json({ message: "Password reset code sent to your email" });
+    } catch (error: any) {
+      console.error("Forgot password error:", error);
+      res.status(400).json({ message: error.message || "Failed to send reset code" });
+    }
+  });
+
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { email, otp, newPassword } = resetPasswordSchema.parse(req.body);
+      await resetPassword(email, otp, newPassword);
+      res.json({ message: "Password reset successful. You can now log in with your new password." });
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      res.status(400).json({ message: error.message || "Password reset failed" });
+    }
+  });
+
+  app.post('/api/auth/resend-otp', async (req, res) => {
+    try {
+      const { email, type } = req.body;
+      await resendOTP(email, type);
+      res.json({ message: "New verification code sent to your email" });
+    } catch (error: any) {
+      console.error("Resend OTP error:", error);
+      res.status(400).json({ message: error.message || "Failed to resend code" });
+    }
+  });
+
+  // Auth routes
+  app.get('/api/auth/user', async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      if (!userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      // Don't send password in response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // User profile routes
+  app.get('/api/profile', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const profile = await storage.getUserProfile(userId);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+
+  app.post('/api/profile', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const profileData = { ...req.body, userId };
+      const profile = await storage.upsertUserProfile(profileData);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  // Food logging routes
+  app.get('/api/food-logs', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const date = req.query.date ? new Date(req.query.date as string) : new Date();
+      const logs = await storage.getFoodLogs(userId, date);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching food logs:", error);
+      res.status(500).json({ message: "Failed to fetch food logs" });
+    }
+  });
+
+  app.post('/api/food-logs', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const logData = { ...req.body, userId };
+      const log = await storage.createFoodLog(logData);
+      res.json(log);
+    } catch (error) {
+      console.error("Error creating food log:", error);
+      res.status(500).json({ message: "Failed to create food log" });
+    }
+  });
+
+  app.get('/api/food-items', requireAuth, async (req, res) => {
+    try {
+      const search = req.query.search as string;
+      const items = await storage.getFoodItems(search);
+      res.json(items);
+    } catch (error) {
+      console.error("Error fetching food items:", error);
+      res.status(500).json({ message: "Failed to fetch food items" });
+    }
+  });
+
+  // Water logging routes
+  app.get('/api/water-logs', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const date = req.query.date ? new Date(req.query.date as string) : new Date();
+      const logs = await storage.getWaterLogs(userId, date);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching water logs:", error);
+      res.status(500).json({ message: "Failed to fetch water logs" });
+    }
+  });
+
+  app.post('/api/water-logs', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const logData = { ...req.body, userId };
+      const log = await storage.createWaterLog(logData);
+      res.json(log);
+    } catch (error) {
+      console.error("Error creating water log:", error);
+      res.status(500).json({ message: "Failed to create water log" });
+    }
+  });
+
+  // Weight tracking routes
+  app.get('/api/weight-logs', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const logs = await storage.getWeightLogs(userId);
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching weight logs:", error);
+      res.status(500).json({ message: "Failed to fetch weight logs" });
+    }
+  });
+
+  app.post('/api/weight-logs', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const logData = { ...req.body, userId };
+      const log = await storage.createWeightLog(logData);
+      res.json(log);
+    } catch (error) {
+      console.error("Error creating weight log:", error);
+      res.status(500).json({ message: "Failed to create weight log" });
+    }
+  });
+
+  // Appointment routes
+  app.get('/api/appointments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const appointments = await storage.getAppointments(userId);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      res.status(500).json({ message: "Failed to fetch appointments" });
+    }
+  });
+
+  app.post('/api/appointments', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const appointmentData = { ...req.body, userId };
+      const appointment = await storage.createAppointment(appointmentData);
+      res.json(appointment);
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      res.status(500).json({ message: "Failed to create appointment" });
+    }
+  });
+
+  app.get('/api/nutritionists', requireAuth, async (req, res) => {
+    try {
+      const nutritionists = await storage.getNutritionists();
+      res.json(nutritionists);
+    } catch (error) {
+      console.error("Error fetching nutritionists:", error);
+      res.status(500).json({ message: "Failed to fetch nutritionists" });
+    }
+  });
+
+  // Community routes
+  app.get('/api/community/posts', requireAuth, async (req, res) => {
+    try {
+      const posts = await storage.getCommunityPosts();
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching community posts:", error);
+      res.status(500).json({ message: "Failed to fetch community posts" });
+    }
+  });
+
+  app.post('/api/community/posts', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const postData = { ...req.body, userId };
+      const post = await storage.createCommunityPost(postData);
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating community post:", error);
+      res.status(500).json({ message: "Failed to create community post" });
+    }
+  });
+
+  app.post('/api/community/posts/:id/like', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const postId = req.params.id;
+      await storage.togglePostLike(userId, postId);
+      res.json({ message: "Like toggled successfully" });
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      res.status(500).json({ message: "Failed to toggle like" });
+    }
+  });
+
+  // Friends routes
+  app.get('/api/friends', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const friends = await storage.getFriends(userId);
+      res.json(friends);
+    } catch (error) {
+      console.error("Error fetching friends:", error);
+      res.status(500).json({ message: "Failed to fetch friends" });
+    }
+  });
+
+  app.get('/api/friends/activity', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const activity = await storage.getFriendActivity(userId);
+      res.json(activity);
+    } catch (error) {
+      console.error("Error fetching friend activity:", error);
+      res.status(500).json({ message: "Failed to fetch friend activity" });
+    }
+  });
+
+  // Notifications routes
+  app.get('/api/notifications', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const notifications = await storage.getNotifications(userId);
+      res.json(notifications);
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.post('/api/notifications/:id/read', requireAuth, async (req: any, res) => {
+    try {
+      const id = req.params.id;
+      await storage.markNotificationRead(id);
+      res.json({ message: "Notification marked as read" });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Chat routes
+  app.get('/api/chat/conversations', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const conversations = await storage.getChatConversations(userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  app.post('/api/chat/conversations', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const { title, language } = req.body;
+      const conversation = await storage.createChatConversation(userId, title, language);
+      res.json(conversation);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ message: "Failed to create conversation" });
+    }
+  });
+
+  app.get('/api/chat/conversations/:id/messages', requireAuth, async (req, res) => {
+    try {
+      const conversationId = req.params.id;
+      const messages = await storage.getChatMessages(conversationId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post('/api/chat/conversations/:id/messages', requireAuth, async (req: any, res) => {
+    try {
+      const conversationId = req.params.id;
+      const { content, language = "en" } = req.body;
+      
+      // Save user message
+      const userMessage = await storage.createChatMessage({
+        conversationId,
+        role: "user",
+        content,
+      });
+
+      // Get conversation history
+      const messages = await storage.getChatMessages(conversationId);
+      const chatHistory = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      // Generate AI response
+      const aiResponse = await generateChatResponse(chatHistory, language);
+      
+      // Save AI response
+      const assistantMessage = await storage.createChatMessage({
+        conversationId,
+        role: "assistant",
+        content: aiResponse.message,
+      });
+
+      res.json({
+        userMessage,
+        assistantMessage,
+      });
+    } catch (error) {
+      console.error("Error processing chat message:", error);
+      res.status(500).json({ message: "Failed to process chat message" });
+    }
+  });
+
+  // User preferences routes
+  app.patch('/api/user/preferences', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const { language, theme } = req.body;
+      
+      const updatedUser = await storage.upsertUser({
+        id: userId,
+        language,
+        theme,
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user preferences:", error);
+      res.status(500).json({ message: "Failed to update preferences" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}
