@@ -359,8 +359,8 @@ export default function Dashboard() {
           <p className="text-gray-600 dark:text-gray-400">{t('dashboard.journey')}</p>
         </div>
 
-        {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Dashboard Cards - All 5 in one row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           {/* Calorie Intake Card */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
             <div className="flex items-center justify-between mb-4">
@@ -397,54 +397,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Weight Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-nutricare-green/20 rounded-full">
-                <i className="fas fa-weight text-nutricare-green text-xl"></i>
-              </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.thisweek')}</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('dashboard.weight')}</h3>
-            <div className="flex items-end space-x-2">
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                {latestWeight ? parseFloat(latestWeight.toString()).toFixed(1) : '0.0'}
-              </span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">kg</span>
-            </div>
-            {weightLogs && weightLogs.length >= 2 && (
-              <div className="flex items-center mt-2">
-                <i className="fas fa-arrow-down text-green-500 text-sm mr-1"></i>
-                <span className="text-sm text-green-500">
-                  {(parseFloat((weightLogs[1]?.weight ?? '0').toString()) - parseFloat(latestWeight?.toString() || '0')).toFixed(1)}kg from last week
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* BMI Card */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-full">
-                <i className="fas fa-calculator text-purple-500 text-xl"></i>
-              </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.current')}</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('dashboard.bmi')}</h3>
-            <div className="flex items-end space-x-2">
-              <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                {latestBMI ? parseFloat(latestBMI.toString()).toFixed(1) : '0.0'}
-              </span>
-              <span className={`text-sm ${bmiStatus.color}`}>{bmiStatus.status}</span>
-            </div>
-            <div className="mt-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.healthy_range')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Macronutrients Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           {/* Protein Card */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
             <div className="flex items-center justify-between mb-4">

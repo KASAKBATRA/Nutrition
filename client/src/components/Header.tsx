@@ -16,10 +16,12 @@ const languageOptions = [
 ];
 
 export function Header() {
+
   const { isAuthenticated, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const [showProgressMenu, setShowProgressMenu] = useState(false);
+  const { toast } = useToast();
 
   const { data: notifications } = useQuery({
     queryKey: ['/api/notifications'],
