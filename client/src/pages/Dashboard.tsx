@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Layout } from '@/components/Layout';
+import { MealModal } from '@/components/MealModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +12,7 @@ export default function Dashboard() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const [isMealModalOpen, setIsMealModalOpen] = useState(false);
 
   const [, setLocation] = useLocation();
   // Redirect to home if not authenticated
@@ -25,6 +27,13 @@ export default function Dashboard() {
 
   const { data: foodLogs } = useQuery({
     queryKey: ['/api/food-logs'],
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
+  // Get daily nutrition summary with enhanced data
+  const { data: dailyNutrition } = useQuery({
+    queryKey: ['/api/daily-log'],
     enabled: isAuthenticated,
     retry: false,
   });
@@ -59,27 +68,36 @@ export default function Dashboard() {
     retry: false,
   });
 
-  // Calculate daily totals
-  const todayFoodLogs = foodLogs?.filter((log: any) => {
-    const logDate = new Date(log.date);
-    const today = new Date();
-    return logDate.toDateString() === today.toDateString();
-  }) || [];
-
+  // Calculate daily totals using enhanced nutrition data
+  const todayFoodLogs = dailyNutrition?.meals || [];
+  
   const todayWaterLogs = waterLogs?.filter((log: any) => {
     const logDate = new Date(log.date);
     const today = new Date();
     return logDate.toDateString() === today.toDateString();
   }) || [];
 
-  const totalCalories = todayFoodLogs.reduce((sum: number, log: any) => sum + (parseFloat(log.calories) || 0), 0);
+  // Use enhanced nutrition data from daily-log endpoint
+  const totalCalories = dailyNutrition?.totalCalories || 0;
+  const totalProtein = dailyNutrition?.totalProtein || 0;
+  const totalCarbs = dailyNutrition?.totalCarbs || 0;
+  const totalFat = dailyNutrition?.totalFat || 0;
   const totalWater = todayWaterLogs.reduce((sum: number, log: any) => sum + (parseFloat(log.amount) || 0), 0);
   const latestWeight = weightLogs?.[0]?.weight || 0;
   const latestBMI = weightLogs?.[0]?.bmi || 0;
 
+  // Nutrition goals (can be made configurable later)
   const calorieGoal = 2000;
+  const proteinGoal = 150; // grams
+  const carbsGoal = 250; // grams  
+  const fatGoal = 65; // grams
   const waterGoal = 8;
+  
+  // Progress calculations
   const calorieProgress = Math.min((totalCalories / calorieGoal) * 100, 100);
+  const proteinProgress = Math.min((totalProtein / proteinGoal) * 100, 100);
+  const carbsProgress = Math.min((totalCarbs / carbsGoal) * 100, 100);
+  const fatProgress = Math.min((totalFat / fatGoal) * 100, 100);
   const waterProgress = Math.min((totalWater / waterGoal) * 100, 100);
 
   const getBMIStatus = (bmi: number) => {
@@ -190,6 +208,63 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Macronutrients Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Protein Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+                <i className="fas fa-dumbbell text-blue-500 text-xl"></i>
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.today')}</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Protein</h3>
+            <div className="flex items-end space-x-2">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(totalProtein)}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">/ {proteinGoal}g</span>
+            </div>
+            <div className="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${proteinProgress}%` }}></div>
+            </div>
+          </div>
+
+          {/* Carbs Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-full">
+                <i className="fas fa-seedling text-orange-500 text-xl"></i>
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.today')}</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Carbs</h3>
+            <div className="flex items-end space-x-2">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(totalCarbs)}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">/ {carbsGoal}g</span>
+            </div>
+            <div className="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${carbsProgress}%` }}></div>
+            </div>
+          </div>
+
+          {/* Fat Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-full">
+                <i className="fas fa-tint text-purple-500 text-xl"></i>
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.today')}</span>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Fat</h3>
+            <div className="flex items-end space-x-2">
+              <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(totalFat)}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">/ {fatGoal}g</span>
+            </div>
+            <div className="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${fatProgress}%` }}></div>
+            </div>
+          </div>
+        </div>
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Daily Food Log */}
@@ -200,7 +275,10 @@ export default function Dashboard() {
                   <i className="fas fa-utensils text-nutricare-green mr-2"></i>
                   {t('meals.title')}
                 </h3>
-                <button className="px-4 py-2 bg-nutricare-green text-white rounded-lg hover:bg-nutricare-dark transition-colors text-sm">
+                <button 
+                  onClick={() => setIsMealModalOpen(true)}
+                  className="px-4 py-2 bg-nutricare-green text-white rounded-lg hover:bg-nutricare-dark transition-colors text-sm"
+                >
                   <i className="fas fa-plus mr-1"></i>
                   {t('meals.add')}
                 </button>
@@ -209,32 +287,52 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {/* Show recent meals or empty state */}
                 {todayFoodLogs.length > 0 ? (
-                  todayFoodLogs.slice(0, 4).map((log: any, index: number) => (
-                    <div key={log.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
-                      <div className="flex items-center space-x-4">
-                        <div className={`p-2 ${index === 0 ? 'bg-orange-500' : index === 1 ? 'bg-yellow-500' : index === 2 ? 'bg-green-500' : 'bg-purple-500'} rounded-full`}>
-                          <i className={`fas ${index === 0 ? 'fa-sun' : index === 1 ? 'fa-sun' : index === 2 ? 'fa-apple-alt' : 'fa-moon'} text-white text-sm`}></i>
+                  todayFoodLogs.slice(0, 4).map((meal: any, index: number) => {
+                    const mealTypeIcons = {
+                      breakfast: { icon: 'fa-sun', color: 'bg-orange-500' },
+                      lunch: { icon: 'fa-sun', color: 'bg-yellow-500' },
+                      dinner: { icon: 'fa-moon', color: 'bg-purple-500' },
+                      snack: { icon: 'fa-apple-alt', color: 'bg-green-500' },
+                    };
+                    const mealIcon = mealTypeIcons[meal.mealType as keyof typeof mealTypeIcons] || mealTypeIcons.snack;
+                    
+                    return (
+                      <div key={meal.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center space-x-4">
+                          <div className={`p-2 ${mealIcon.color} rounded-full`}>
+                            <i className={`fas ${mealIcon.icon} text-white text-sm`}></i>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900 dark:text-white capitalize">{meal.mealName}</h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {meal.quantity} {meal.unit} • {meal.mealType}
+                            </p>
+                            <div className="flex space-x-3 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              <span>P: {meal.protein}g</span>
+                              <span>C: {meal.carbs}g</span>
+                              <span>F: {meal.fat}g</span>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-white">{log.mealType}</h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">Food logged</p>
+                        <div className="text-right">
+                          <p className="font-semibold text-gray-900 dark:text-white">{meal.calories} cal</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(meal.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900 dark:text-white">{Math.round(parseFloat(log.calories || '0'))} cal</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {new Date(log.loggedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-center py-8">
                     <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                       <i className="fas fa-utensils text-gray-400 text-xl"></i>
                     </div>
                     <p className="text-gray-500 dark:text-gray-400 mb-4">No meals logged today</p>
-                    <button className="px-4 py-2 bg-nutricare-green text-white rounded-lg hover:bg-nutricare-dark transition-colors">
+                    <button 
+                      onClick={() => setIsMealModalOpen(true)}
+                      className="px-4 py-2 bg-nutricare-green text-white rounded-lg hover:bg-nutricare-dark transition-colors"
+                    >
                       {t('meals.add')}
                     </button>
                   </div>
@@ -383,6 +481,16 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Meal Modal */}
+      <MealModal 
+        isOpen={isMealModalOpen}
+        onClose={() => setIsMealModalOpen(false)}
+        onMealAdded={() => {
+          // Refresh the food logs data when a meal is added
+          // The modal will handle the query invalidation
+        }}
+      />
     </Layout>
   );
 }

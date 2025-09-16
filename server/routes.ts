@@ -5,6 +5,7 @@ import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { storage } from "./storage";
 import { generateChatResponse } from "./openai";
+import { nutritionService, addMealSchema, type AddMealData } from "./nutrition";
 import { 
   registerUser, 
   verifyOTP, 
@@ -35,6 +36,12 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Validate required environment variables
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    throw new Error("SESSION_SECRET environment variable is required for secure sessions");
+  }
+
   // Session middleware
   app.use(session({
     store: new PgSession({
@@ -42,7 +49,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       tableName: 'sessions',
       createTableIfMissing: true,
     }),
-    secret: process.env.SESSION_SECRET || 'nutricare-secret-key-change-in-production',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -230,6 +237,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching food items:", error);
       res.status(500).json({ message: "Failed to fetch food items" });
+    }
+  });
+
+  // New meal logging endpoints with nutrition calculation
+  app.post('/api/add-meal', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const mealData = addMealSchema.parse(req.body);
+      
+      // Get nutrition data from Nutritionix API
+      const nutrition = await nutritionService.getNutrition(
+        mealData.mealName,
+        mealData.quantity,
+        mealData.unit
+      );
+
+      // Create or get food item in database
+      const foodItem = await storage.createOrGetFoodItem(mealData.mealName, {
+        calories: nutrition.calories,
+        protein: nutrition.protein,
+        carbs: nutrition.carbs,
+        fats: nutrition.fat,
+        fiber: nutrition.fiber,
+        sugar: nutrition.sugar,
+        sodium: nutrition.sodium,
+      });
+
+      // Create food log entry
+      const foodLog = await storage.createFoodLog({
+        userId,
+        foodItemId: foodItem.id,
+        mealName: mealData.mealName,
+        mealType: mealData.mealType,
+        quantity: mealData.quantity.toString(),
+        unit: mealData.unit,
+        calories: nutrition.calories.toString(),
+        protein: nutrition.protein.toString(),
+        carbs: nutrition.carbs.toString(),
+        fat: nutrition.fat.toString(),
+        date: new Date(),
+      });
+
+      res.json({
+        message: "Meal logged successfully",
+        meal: foodLog,
+        nutrition: {
+          calories: nutrition.calories,
+          protein: nutrition.protein,
+          carbs: nutrition.carbs,
+          fat: nutrition.fat,
+        },
+      });
+    } catch (error: any) {
+      console.error("Error adding meal:", error);
+      res.status(400).json({ 
+        message: error.message || "Failed to add meal",
+        errors: error.errors || []
+      });
+    }
+  });
+
+  app.get('/api/daily-log', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const date = req.query.date ? new Date(req.query.date as string) : new Date();
+      
+      const dailySummary = await storage.getDailyNutritionSummary(userId, date);
+      
+      res.json({
+        date: date.toISOString().split('T')[0],
+        totalCalories: Math.round(dailySummary.totalCalories),
+        totalProtein: Math.round(dailySummary.totalProtein * 100) / 100,
+        totalCarbs: Math.round(dailySummary.totalCarbs * 100) / 100,
+        totalFat: Math.round(dailySummary.totalFats * 100) / 100,
+        meals: dailySummary.meals.map(meal => ({
+          id: meal.id,
+          mealName: meal.mealName,
+          mealType: meal.mealType,
+          quantity: parseFloat(meal.quantity || "0"),
+          unit: meal.unit,
+          calories: Math.round(parseFloat(meal.calories || "0")),
+          protein: Math.round((parseFloat(meal.protein || "0")) * 100) / 100,
+          carbs: Math.round((parseFloat(meal.carbs || "0")) * 100) / 100,
+          fat: Math.round((parseFloat(meal.fat || "0")) * 100) / 100,
+          loggedAt: meal.loggedAt,
+        })),
+      });
+    } catch (error) {
+      console.error("Error fetching daily log:", error);
+      res.status(500).json({ message: "Failed to fetch daily log" });
+    }
+  });
+
+  // Food search endpoint for meal modal
+  app.get('/api/food-search', requireAuth, async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.length < 2) {
+        return res.json({ common: [] });
+      }
+      
+      const searchResults = await nutritionService.searchFoods(query);
+      res.json(searchResults);
+    } catch (error) {
+      console.error("Error searching foods:", error);
+      res.status(500).json({ message: "Failed to search foods" });
     }
   });
 

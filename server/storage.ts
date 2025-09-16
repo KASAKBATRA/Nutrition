@@ -75,6 +75,22 @@ export interface IStorage {
   getFoodLogs(userId: string, date?: Date): Promise<FoodLog[]>;
   createFoodLog(foodLog: InsertFoodLog): Promise<FoodLog>;
   getFoodItems(search?: string): Promise<FoodItem[]>;
+  createOrGetFoodItem(name: string, nutritionPer100g: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+    fiber?: number;
+    sugar?: number;
+    sodium?: number;
+  }): Promise<FoodItem>;
+  getDailyNutritionSummary(userId: string, date?: Date): Promise<{
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbs: number;
+    totalFats: number;
+    meals: FoodLog[];
+  }>;
   
   // Water logging
   getWaterLogs(userId: string, date?: Date): Promise<WaterLog[]>;
@@ -288,6 +304,78 @@ export class DatabaseStorage implements IStorage {
     }
     
     return await query.limit(50);
+  }
+
+  async createOrGetFoodItem(name: string, nutritionPer100g: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+    fiber?: number;
+    sugar?: number;
+    sodium?: number;
+  }): Promise<FoodItem> {
+    // Try to find existing food item by name
+    const [existingItem] = await db
+      .select()
+      .from(foodItems)
+      .where(sql`${foodItems.name} ILIKE ${name.toLowerCase()}`)
+      .limit(1);
+
+    if (existingItem) {
+      return existingItem;
+    }
+
+    // Create new food item if not found
+    const [newItem] = await db
+      .insert(foodItems)
+      .values({
+        name: name.toLowerCase(),
+        caloriesPer100g: nutritionPer100g.calories.toString(),
+        proteinPer100g: nutritionPer100g.protein.toString(),
+        carbsPer100g: nutritionPer100g.carbs.toString(),
+        fatsPer100g: nutritionPer100g.fats.toString(),
+        fiberPer100g: nutritionPer100g.fiber?.toString() || "0",
+        sugarPer100g: nutritionPer100g.sugar?.toString() || "0",
+        sodiumPer100g: nutritionPer100g.sodium?.toString() || "0",
+      })
+      .returning();
+
+    return newItem;
+  }
+
+  async getDailyNutritionSummary(userId: string, date?: Date): Promise<{
+    totalCalories: number;
+    totalProtein: number;
+    totalCarbs: number;
+    totalFats: number;
+    meals: FoodLog[];
+  }> {
+    const meals = await this.getFoodLogs(userId, date);
+    
+    const totals = meals.reduce((acc, meal) => {
+      const calories = parseFloat(meal.calories || "0");
+      const protein = parseFloat(meal.protein || "0");
+      const carbs = parseFloat(meal.carbs || "0");
+      const fat = parseFloat(meal.fat || "0");
+      
+      return {
+        totalCalories: acc.totalCalories + calories,
+        totalProtein: acc.totalProtein + protein,
+        totalCarbs: acc.totalCarbs + carbs,
+        totalFats: acc.totalFats + fat,
+      };
+    }, {
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFats: 0,
+    });
+
+    return {
+      ...totals,
+      meals,
+    };
   }
 
   // Water logging

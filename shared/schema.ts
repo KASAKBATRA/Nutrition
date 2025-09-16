@@ -104,10 +104,14 @@ export const foodLogs = pgTable("food_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").references(() => users.id).notNull(),
   foodItemId: varchar("food_item_id").references(() => foodItems.id),
+  mealName: varchar("meal_name").notNull(), // The name of the food logged
   mealType: varchar("meal_type").notNull(), // breakfast, lunch, dinner, snack
   quantity: decimal("quantity", { precision: 8, scale: 2 }).notNull(),
   unit: varchar("unit").default("grams"),
   calories: decimal("calories", { precision: 8, scale: 2 }),
+  protein: decimal("protein", { precision: 8, scale: 2 }),
+  carbs: decimal("carbs", { precision: 8, scale: 2 }),
+  fat: decimal("fat", { precision: 8, scale: 2 }),
   loggedAt: timestamp("logged_at").defaultNow(),
   date: timestamp("date").notNull(),
 });
