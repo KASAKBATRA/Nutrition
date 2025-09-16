@@ -1,4 +1,90 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, ChangeEvent, useRef } from 'react';
+import Tesseract from 'tesseract.js';
+
+// Simple nutrition facts parser (expand as needed)
+function parseNutritionFacts(text: string) {
+  const getVal = (label: string, regex: RegExp) => {
+    const match = text.match(regex);
+    return match ? parseFloat(match[1]) : undefined;
+  };
+  return {
+    calories: getVal('calories', /calories[^\d]*(\d+)/i),
+    sugar: getVal('sugar', /sugar[^\d]*(\d+)/i),
+    fat: getVal('fat', /fat[^\d]*(\d+)/i),
+    protein: getVal('protein', /protein[^\d]*(\d+)/i),
+    sodium: getVal('sodium', /sodium[^\d]*(\d+)/i),
+    fiber: getVal('fiber', /fiber[^\d]*(\d+)/i),
+  };
+}
+
+// Simple health classification rules
+function classifyHealth(facts: any) {
+  if (!facts) return { status: 'Unknown', explanation: 'Could not extract nutrition facts.' };
+  if (facts.sugar && facts.sugar > 10) return { status: 'Unhealthy', explanation: `High sugar (${facts.sugar}g per serving)` };
+  if (facts.sodium && facts.sodium > 400) return { status: 'Unhealthy', explanation: `High sodium (${facts.sodium}mg per serving)` };
+  if (facts.protein && facts.protein > 5 && facts.fat && facts.fat < 5 && facts.fiber && facts.fiber > 3)
+    return { status: 'Healthy', explanation: 'High protein, low fat, fiber rich' };
+  return { status: 'Moderate', explanation: 'No major red flags detected.' };
+}
+
+// Handle file upload
+// (Removed duplicate handleLabelImageChange to avoid redeclaration error)
+
+// --- API Response Types ---
+interface Meal {
+  id: string;
+  mealName: string;
+  mealType: string;
+  quantity: number;
+  unit: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  loggedAt: string;
+}
+
+interface DailyNutrition {
+  meals: Meal[];
+  totalCalories: number;
+  totalProtein: number;
+  totalCarbs: number;
+  totalFat: number;
+  totalWater: number;
+}
+
+interface WeightLog {
+  weight: number;
+  bmi: number;
+  createdAt: string;
+}
+
+interface CommunityPostUser {
+  firstName: string;
+  lastName: string;
+}
+
+interface CommunityPost {
+  user: CommunityPostUser;
+  createdAt: string;
+  imageUrl?: string;
+  content: string;
+  likesCount: number;
+  commentsCount: number;
+}
+
+interface Appointment {
+  id: string;
+  date: string;
+  time: string;
+  nutritionist: string;
+}
+
+interface Friend {
+  id: string;
+  name: string;
+}
 import { useLocation } from 'wouter';
 import { Layout } from '@/components/Layout';
 import { MealModal } from '@/components/MealModal';
@@ -9,7 +95,70 @@ import { useQuery } from '@tanstack/react-query';
 import { isUnauthorizedError } from '@/lib/authUtils';
 
 export default function Dashboard() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  // OCR and Health Classification State (must be inside component)
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [labelImage, setLabelImage] = useState<File | null>(null);
+  const [ocrText, setOcrText] = useState<string>('');
+  const [nutritionFacts, setNutritionFacts] = useState<any>(null);
+  const [healthResult, setHealthResult] = useState<{ status: string; explanation: string } | null>(null);
+
+  // Open file picker when Scan Food Label is clicked
+  const handleScanFoodLabelClick = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  // Suggest alternatives based on food type or unhealthy result
+  const [alternatives, setAlternatives] = useState<string[]>([]);
+
+  // OCR and classification logic
+  const handleLabelImageChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setLabelImage(file);
+      setOcrText('');
+      setNutritionFacts(null);
+      setHealthResult(null);
+      setAlternatives([]);
+
+      // OCR with Tesseract.js
+      const { data: { text } } = await Tesseract.recognize(file, 'eng');
+      setOcrText(text);
+
+      // Parse nutrition facts from OCR text
+      const facts = parseNutritionFacts(text);
+      setNutritionFacts(facts);
+
+      // Classify healthiness
+      const result = classifyHealth(facts);
+      setHealthResult(result);
+
+      // Suggest alternatives (simple keyword-based)
+      const lowerText = text.toLowerCase();
+      let alt: string[] = [];
+      if (lowerText.includes('chips') || lowerText.includes('lays')) {
+        alt = ['Roasted chickpeas', 'Baked veggie chips', 'Air-popped popcorn', 'Roasted makhana', 'Homemade sweet potato chips'];
+      } else if (lowerText.includes('cola') || lowerText.includes('soda')) {
+        alt = ['Sparkling water with lemon', 'Coconut water', 'Fresh lime soda (unsweetened)', 'Infused water', 'Buttermilk (chaas)'];
+      } else if (lowerText.includes('chocolate')) {
+        alt = ['Dark chocolate (70%+)', 'Roasted nuts', 'Fruit & nut bars', 'Dates stuffed with nuts'];
+      } else if (lowerText.includes('biscuit') || lowerText.includes('cookie')) {
+        alt = ['Oats cookies', 'Whole wheat crackers', 'Homemade granola bars', 'Khakhra'];
+      } else if (lowerText.includes('namkeen') || lowerText.includes('mixture')) {
+        alt = ['Roasted chana', 'Bhel with sprouts', 'Murmura (puffed rice) snack', 'Roasted peanuts'];
+      }
+      if (result.status === 'Unhealthy' && alt.length === 0) {
+        alt = ['Fresh fruits', 'Roasted nuts', 'Homemade snacks', 'Yogurt with seeds', 'Vegetable sticks with hummus'];
+      }
+      setAlternatives(alt);
+    }
+  };
+  // Define a User type with at least firstName property
+  interface User {
+    firstName?: string;
+    lastName?: string;
+    // add other properties as needed
+  }
+  const { user, isAuthenticated, isLoading } = useAuth() as { user: User; isAuthenticated: boolean; isLoading: boolean };
   const { t } = useLanguage();
   const { toast } = useToast();
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
@@ -25,18 +174,25 @@ export default function Dashboard() {
 
   
 
-  const { data: foodLogs } = useQuery({
+
+  const { data: foodLogs } = useQuery<Meal[]>({
     queryKey: ['/api/food-logs'],
     enabled: isAuthenticated,
     retry: false,
   });
 
   // Get daily nutrition summary with enhanced data
-  const { data: dailyNutrition } = useQuery({
+  const { data: dailyNutrition } = useQuery<DailyNutrition>({
     queryKey: ['/api/daily-log'],
     enabled: isAuthenticated,
     retry: false,
   });
+
+  // Example: Add similar types to other queries if needed
+  // const { data: weightLogs } = useQuery<WeightLog[]>({ ... });
+  // const { data: communityPosts } = useQuery<CommunityPost[]>({ ... });
+  // const { data: appointments } = useQuery<Appointment[]>({ ... });
+  // const { data: friends } = useQuery<Friend[]>({ ... });
 
   const { data: waterLogs } = useQuery({
     queryKey: ['/api/water-logs'],
@@ -44,25 +200,25 @@ export default function Dashboard() {
     retry: false,
   });
 
-  const { data: weightLogs } = useQuery({
+  const { data: weightLogs } = useQuery<WeightLog[]>({
     queryKey: ['/api/weight-logs'],
     enabled: isAuthenticated,
     retry: false,
   });
 
-  const { data: communityPosts } = useQuery({
+  const { data: communityPosts } = useQuery<CommunityPost[]>({
     queryKey: ['/api/community/posts'],
     enabled: isAuthenticated,
     retry: false,
   });
 
-  const { data: appointments } = useQuery({
+  const { data: appointments } = useQuery<Appointment[]>({
     queryKey: ['/api/appointments'],
     enabled: isAuthenticated,
     retry: false,
   });
 
-  const { data: friends } = useQuery({
+  const { data: friends } = useQuery<Friend[]>({
     queryKey: ['/api/friends'],
     enabled: isAuthenticated,
     retry: false,
@@ -71,11 +227,11 @@ export default function Dashboard() {
   // Calculate daily totals using enhanced nutrition data
   const todayFoodLogs = dailyNutrition?.meals || [];
   
-  const todayWaterLogs = waterLogs?.filter((log: any) => {
+  const todayWaterLogs = (Array.isArray(waterLogs) ? waterLogs : []).filter((log: any) => {
     const logDate = new Date(log.date);
     const today = new Date();
     return logDate.toDateString() === today.toDateString();
-  }) || [];
+  });
 
   // Use enhanced nutrition data from daily-log endpoint
   const totalCalories = dailyNutrition?.totalCalories || 0;
@@ -116,6 +272,85 @@ export default function Dashboard() {
   return (
     <Layout showSidebar={true}>
       <div className="p-6 lg:p-8">
+        {/* Food Label Upload & OCR */}
+
+        {/* Food Label OCR & Health Classification Modal (Glassmorphism) */}
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={handleLabelImageChange}
+        />
+        {labelImage && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+            style={{ animation: 'fadeIn 0.2s' }}
+          >
+            <div
+              className="relative w-full max-w-md mx-auto p-6 rounded-2xl shadow-2xl"
+              style={{
+                background: 'rgba(255,255,255,0.25)',
+                boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.18)',
+              }}
+            >
+              <button
+                className="absolute top-2 right-2 text-gray-700 bg-white/60 hover:bg-white/90 rounded-full p-1 shadow"
+                onClick={() => {
+                  setLabelImage(null);
+                  setOcrText('');
+                  setNutritionFacts(null);
+                  setHealthResult(null);
+                }}
+                aria-label="Close"
+              >
+                <span className="text-lg">×</span>
+              </button>
+              <div className="flex flex-col items-center">
+                <img src={URL.createObjectURL(labelImage)} alt="Label Preview" className="max-h-32 rounded-xl shadow mb-4 border border-white/40" />
+                {healthResult && (
+                  <div className="mb-2 px-4 py-2 rounded-xl font-semibold text-center text-lg"
+                    style={{
+                      background: healthResult.status === 'Healthy' ? 'rgba(16,185,129,0.15)' : healthResult.status === 'Unhealthy' ? 'rgba(239,68,68,0.15)' : 'rgba(253,224,71,0.15)',
+                      color: healthResult.status === 'Healthy' ? '#059669' : healthResult.status === 'Unhealthy' ? '#dc2626' : '#b45309',
+                    }}
+                  >
+                    {healthResult.status === 'Healthy' && '✅'}
+                    {healthResult.status === 'Unhealthy' && '❌'}
+                    {healthResult.status === 'Moderate' && '⚠️'}
+                    {healthResult.status}: {healthResult.explanation}
+                  </div>
+                )}
+                {alternatives.length > 0 && (
+                  <div className="mb-2 px-4 py-2 rounded-xl bg-white/60 shadow text-sm text-gray-800">
+                    <strong>Healthier Alternatives:</strong>
+                    <ul className="list-disc ml-5 mt-1">
+                      {alternatives.map((alt, i) => (
+                        <li key={i}>{alt}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {nutritionFacts && (
+                  <div className="w-full mb-2 p-2 rounded-xl bg-white/40 text-xs text-gray-800 shadow-inner">
+                    <strong>Nutrition Facts:</strong>
+                    <pre className="whitespace-pre-wrap">{JSON.stringify(nutritionFacts, null, 2)}</pre>
+                  </div>
+                )}
+                {ocrText && (
+                  <div className="w-full p-2 rounded-xl bg-white/30 text-xs text-gray-700 max-h-40 overflow-y-auto shadow-inner">
+                    <strong>Extracted Text:</strong>
+                    <pre className="whitespace-pre-wrap">{ocrText}</pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Dashboard Header */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -181,7 +416,7 @@ export default function Dashboard() {
               <div className="flex items-center mt-2">
                 <i className="fas fa-arrow-down text-green-500 text-sm mr-1"></i>
                 <span className="text-sm text-green-500">
-                  {(parseFloat(weightLogs[1]?.weight || '0') - parseFloat(latestWeight?.toString() || '0')).toFixed(1)}kg from last week
+                  {(parseFloat((weightLogs[1]?.weight ?? '0').toString()) - parseFloat(latestWeight?.toString() || '0')).toFixed(1)}kg from last week
                 </span>
               </div>
             )}
@@ -218,10 +453,10 @@ export default function Dashboard() {
               </div>
               <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.today')}</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Protein</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('dashboard.protein')}</h3>
             <div className="flex items-end space-x-2">
               <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(totalProtein)}</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">/ {proteinGoal}g</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">/ {proteinGoal}{t('units.g')}</span>
             </div>
             <div className="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${proteinProgress}%` }}></div>
@@ -236,10 +471,10 @@ export default function Dashboard() {
               </div>
               <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.today')}</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Carbs</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('dashboard.carbs')}</h3>
             <div className="flex items-end space-x-2">
               <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(totalCarbs)}</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">/ {carbsGoal}g</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">/ {carbsGoal}{t('units.g')}</span>
             </div>
             <div className="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-orange-500 h-2 rounded-full" style={{ width: `${carbsProgress}%` }}></div>
@@ -254,10 +489,10 @@ export default function Dashboard() {
               </div>
               <span className="text-sm text-gray-500 dark:text-gray-400">{t('dashboard.today')}</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Fat</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('dashboard.fat')}</h3>
             <div className="flex items-end space-x-2">
               <span className="text-2xl font-bold text-gray-900 dark:text-white">{Math.round(totalFat)}</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">/ {fatGoal}g</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">/ {fatGoal}{t('units.g')}</span>
             </div>
             <div className="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${fatProgress}%` }}></div>
@@ -407,7 +642,10 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('actions.title')}</h3>
               <div className="space-y-3">
-                <button className="w-full flex items-center space-x-3 p-3 bg-nutricare-green/10 hover:bg-nutricare-green/20 rounded-lg transition-colors">
+                <button
+                  className="w-full flex items-center space-x-3 p-3 bg-nutricare-green/10 hover:bg-nutricare-green/20 rounded-lg transition-colors"
+                  onClick={handleScanFoodLabelClick}
+                >
                   <i className="fas fa-camera-retro text-nutricare-green"></i>
                   <span className="text-gray-700 dark:text-gray-300">{t('actions.scan')}</span>
                 </button>
