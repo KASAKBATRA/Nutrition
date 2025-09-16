@@ -5,13 +5,26 @@ import { z } from 'zod';
 
 // Validation schemas
 export const registerSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  role: z.enum(['user', 'nutritionist']).default('user'),
+  // Common fields
+  firstName: z.string().min(2, 'First name must be at least 2 characters').optional(),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters').optional(),
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string(),
-  age: z.number().min(13, 'Must be at least 13 years old').max(120, 'Invalid age'),
-  gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']),
+  // User fields
+  age: z.number().min(13, 'Must be at least 13 years old').max(120, 'Invalid age').optional(),
+  gender: z.enum(['male', 'female', 'other', 'prefer_not_to_say']).optional(),
+  // Nutritionist fields
+  qualification: z.string().optional(),
+  experience: z.number().min(0, 'Experience must be 0 or more').optional(),
+  specialization: z.string().optional(),
+  licenseNumber: z.string().optional(),
+  consultationMode: z.string().optional(),
+  availableSlots: z.string().optional(),
+  consultationFee: z.number().min(0, 'Fee must be 0 or more').optional(),
+  bio: z.string().optional(),
+  languages: z.array(z.string()).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -48,15 +61,43 @@ export async function registerUser(userData: z.infer<typeof registerSchema>) {
     throw new Error('User with this email already exists');
   }
 
-  // Create user
-  const user = await storage.createUser({
-    email: userData.email,
-    password: userData.password,
-    firstName: userData.firstName,
-    lastName: userData.lastName,
-    age: userData.age,
-    gender: userData.gender,
-  });
+  let user;
+  if (userData.role === 'nutritionist') {
+    // Create user with role nutritionist
+    user = await storage.createUser({
+      email: userData.email,
+      password: userData.password,
+      firstName: userData.firstName || '',
+      lastName: userData.lastName || '',
+      age: 0, // Not required for nutritionist
+      gender: '', // Not required for nutritionist
+      role: 'nutritionist',
+    });
+    // Add nutritionist profile
+    await storage.createNutritionist({
+      userId: user.id,
+      qualifications: userData.qualification || '',
+      experience: userData.experience || 0,
+      specialization: userData.specialization || '',
+      licenseNumber: userData.licenseNumber || '',
+      consultationMode: userData.consultationMode || '',
+      availableSlots: userData.availableSlots || '',
+      consultationFee: userData.consultationFee || 0,
+      bio: userData.bio || '',
+      languages: userData.languages ? userData.languages.join(',') : '',
+    });
+  } else {
+    // Create regular user
+    user = await storage.createUser({
+      email: userData.email,
+      password: userData.password,
+      firstName: userData.firstName || '',
+      lastName: userData.lastName || '',
+      age: userData.age || 0,
+      gender: userData.gender || '',
+      role: 'user',
+    });
+  }
 
   // Generate and send OTP
   const otp = generateOTP();
@@ -64,7 +105,7 @@ export async function registerUser(userData: z.infer<typeof registerSchema>) {
   expiresAt.setMinutes(expiresAt.getMinutes() + 5); // 5 minutes expiry
 
   await storage.createOTP({
-    email: userData.email,
+    email: userData.email.toLowerCase(),
     otp,
     type: 'registration',
     expiresAt,
@@ -76,16 +117,20 @@ export async function registerUser(userData: z.infer<typeof registerSchema>) {
 }
 
 export async function verifyOTP(email: string, otp: string, type: string) {
-  const otpRecord = await storage.getValidOTP(email, otp, type);
-  
+  // Always trim and lowercase email, trim OTP
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanOtp = otp.trim();
+  const cleanType = type.trim().toLowerCase();
+  const otpRecord = await storage.getValidOTP(cleanEmail, cleanOtp, cleanType);
+
   if (!otpRecord) {
     throw new Error('Invalid or expired OTP');
   }
 
   await storage.markOTPUsed(otpRecord.id);
 
-  if (type === 'registration') {
-    const user = await storage.getUserByEmail(email);
+  if (cleanType === 'registration') {
+    const user = await storage.getUserByEmail(cleanEmail);
     if (user) {
       await storage.verifyUser(user.id);
     }

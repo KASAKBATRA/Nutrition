@@ -52,6 +52,7 @@ export const users = pgTable("users", {
   theme: varchar("theme").default("light"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  
 });
 
 // User profiles with health data

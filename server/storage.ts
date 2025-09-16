@@ -56,6 +56,7 @@ export interface IStorage {
     lastName: string;
     age: number;
     gender: string;
+    role?: string;
   }): Promise<User>;
   verifyUser(userId: string): Promise<void>;
   updateUserPassword(userId: string, newPassword: string): Promise<void>;
@@ -149,9 +150,9 @@ export class DatabaseStorage implements IStorage {
     lastName: string;
     age: number;
     gender: string;
+    role?: string;
   }): Promise<User> {
     const hashedPassword = await bcrypt.hash(userData.password, 12);
-    
     const [user] = await db
       .insert(users)
       .values({
@@ -161,6 +162,8 @@ export class DatabaseStorage implements IStorage {
         lastName: userData.lastName,
         age: userData.age,
         gender: userData.gender,
+        role: userData.role || 'user',
+        profileImageUrl: null, // Set to null by default
         isVerified: false,
       })
       .returning();

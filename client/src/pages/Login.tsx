@@ -22,6 +22,7 @@ export default function Login() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+  const [role, setRole] = useState<'user' | 'nutritionist'>('user');
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -40,7 +41,7 @@ export default function Login() {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, role }),
       });
 
       const result = await response.json();
@@ -75,7 +76,6 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-nutricare-green/10 via-white to-nutricare-light/10 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <FloatingElements />
-      
       <div className="w-full max-w-md relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -86,6 +86,26 @@ export default function Login() {
             NutriCare++
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Welcome back to your health journey</p>
+        </div>
+
+        {/* Role Selection Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="bg-white dark:bg-gray-700 rounded-full shadow p-1 flex border border-nutricare-green">
+            <button
+              type="button"
+              className={`px-6 py-2 rounded-full font-semibold focus:outline-none transition-colors duration-200 ${role === 'user' ? 'bg-nutricare-green text-white' : 'text-nutricare-green'}`}
+              onClick={() => setRole('user')}
+            >
+              User
+            </button>
+            <button
+              type="button"
+              className={`px-6 py-2 rounded-full font-semibold focus:outline-none transition-colors duration-200 ${role === 'nutritionist' ? 'bg-nutricare-green text-white' : 'text-nutricare-green'}`}
+              onClick={() => setRole('nutritionist')}
+            >
+              Nutritionist
+            </button>
+          </div>
         </div>
 
         {/* Login Form */}

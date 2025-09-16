@@ -12,6 +12,7 @@ export default function Dashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
 
+  const [, setLocation] = useLocation();
   // Redirect to home if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -20,7 +21,7 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, isLoading, setLocation]);
 
-  const [, setLocation] = useLocation();
+  
 
   const { data: foodLogs } = useQuery({
     queryKey: ['/api/food-logs'],
