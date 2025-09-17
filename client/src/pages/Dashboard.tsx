@@ -601,11 +601,17 @@ export default function Dashboard() {
                   <i className="fas fa-camera-retro text-nutricare-green"></i>
                   <span className="text-gray-700 dark:text-gray-300">{t('actions.scan')}</span>
                 </button>
-                <button className="w-full flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                <button
+                  className="w-full flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                  onClick={() => setLocation('/appointments')}
+                >
                   <i className="fas fa-calendar-plus text-blue-500"></i>
                   <span className="text-gray-700 dark:text-gray-300">{t('actions.appointment')}</span>
                 </button>
-                <button className="w-full flex items-center space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors">
+                <button
+                  className="w-full flex items-center space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
+                  onClick={() => setLocation('/reports')}
+                >
                   <i className="fas fa-chart-bar text-purple-500"></i>
                   <span className="text-gray-700 dark:text-gray-300">{t('actions.reports')}</span>
                 </button>

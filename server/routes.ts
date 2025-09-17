@@ -4,6 +4,7 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
 import { storage } from "./storage";
+import { sendMail } from "./email";
 import { generateChatResponse } from "./openai";
 import { nutritionService, addMealSchema, type AddMealData } from "./nutrition";
 import { 
@@ -412,6 +413,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = getUserId(req);
       const appointmentData = { ...req.body, userId };
       const appointment = await storage.createAppointment(appointmentData);
+
+      // Fetch user and nutritionist info
+      const user = await storage.getUser(userId);
+      // Find nutritionist userId from nutritionists table
+      const nutritionistProfile = await storage.getNutritionists();
+      const nutritionist = nutritionistProfile.find(n => n.id === appointmentData.nutritionistId);
+      let nutritionistUser: any = null;
+      if (nutritionist) {
+        nutritionistUser = await storage.getUser(nutritionist.userId);
+      }
+      if (user && nutritionistUser && nutritionistUser.email) {
+        // Fetch health data
+        const [foodLogs, waterLogs, weightLogs, profile] = await Promise.all([
+          storage.getFoodLogs(userId),
+          storage.getWaterLogs(userId),
+          storage.getWeightLogs(userId),
+          storage.getUserProfile(userId),
+        ]);
+        // Build report
+        const report = {
+          user: {
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            email: user.email,
+            age: user.age,
+            gender: user.gender,
+            profile,
+          },
+          createdAt: new Date().toISOString(),
+          foodLogs,
+          waterLogs,
+          weightLogs,
+        };
+        // Send email with JSON attachment
+        await sendMail({
+          to: nutritionistUser.email,
+          subject: `New Appointment: ${user.firstName || ''} ${user.lastName || ''}`,
+          text: `A new appointment has been booked. The user's health report is attached.`,
+          attachments: [
+            {
+              filename: `health-report-${userId}.json`,
+              content: Buffer.from(JSON.stringify(report, null, 2)),
+              contentType: 'application/json',
+            },
+          ],
+        });
+      }
       res.json(appointment);
     } catch (error) {
       console.error("Error creating appointment:", error);

@@ -1,3 +1,26 @@
+// Generic email sender for attachments
+export async function sendMail({ to, subject, text, html, attachments }: {
+  to: string,
+  subject: string,
+  text?: string,
+  html?: string,
+  attachments?: any[]
+}) {
+  try {
+    await transporter.sendMail({
+      from: `"NutriCare++" <${process.env.EMAIL_USER || 'noreply@nutricare.com'}>`,
+      to,
+      subject,
+      text,
+      html,
+      attachments,
+    });
+    console.log(`Email sent to ${to}`);
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    throw new Error('Failed to send email');
+  }
+}
 import nodemailer from 'nodemailer';
 
 // Create transporter for sending emails

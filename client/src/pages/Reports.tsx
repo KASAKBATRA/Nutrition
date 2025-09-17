@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import jsPDF from 'jspdf';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/context/LanguageContext';
@@ -161,19 +162,42 @@ export default function Reports() {
       }
     };
 
-    const dataStr = JSON.stringify(reportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `nutricare-report-${timeRange}-${new Date().toISOString().split('T')[0]}.json`;
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
-    linkElement.click();
+    // PDF export using jsPDF
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('NutriCare++ Health Report', 10, 15);
+    doc.setFontSize(12);
+    doc.text(`Name: ${reportData.user.name}`, 10, 30);
+    doc.text(`Email: ${reportData.user.email}`, 10, 38);
+    doc.text(`Period: ${reportData.period}`, 10, 46);
+    doc.text(`Date Range: ${reportData.dateRange}`, 10, 54);
+    doc.text('---', 10, 60);
+    doc.text('Metrics:', 10, 68);
+    doc.text(`Total Calories: ${reportData.metrics.totalCalories}`, 10, 76);
+    doc.text(`Avg Calories/Day: ${reportData.metrics.averageCaloriesPerDay}`, 10, 84);
+    doc.text(`Total Water: ${reportData.metrics.totalWater} glasses`, 10, 92);
+    doc.text(`Avg Water/Day: ${reportData.metrics.averageWaterPerDay} glasses`, 10, 100);
+    doc.text(`Weight Change: ${reportData.metrics.weightChange} kg`, 10, 108);
+    doc.text('Meal Distribution:', 10, 116);
+    let y = 124;
+    Object.entries(reportData.metrics.mealDistribution).forEach(([meal, cal]: any) => {
+      doc.text(`${meal}: ${cal} cal`, 14, y);
+      y += 8;
+    });
+    y += 4;
+    doc.text('Logs Count:', 10, y);
+    y += 8;
+    doc.text(`Food Logs: ${reportData.logsCount.foodLogs}`, 14, y);
+    y += 8;
+    doc.text(`Water Logs: ${reportData.logsCount.waterLogs}`, 14, y);
+    y += 8;
+    doc.text(`Weight Logs: ${reportData.logsCount.weightLogs}`, 14, y);
+
+    doc.save(`nutricare-report-${timeRange}-${new Date().toISOString().split('T')[0]}.pdf`);
 
     toast({
       title: "Success",
-      description: "Report exported successfully!",
+      description: "Report exported as PDF!",
     });
   };
 

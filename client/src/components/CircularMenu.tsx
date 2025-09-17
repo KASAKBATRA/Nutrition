@@ -48,14 +48,6 @@ export function CircularMenu({ onChatbotOpen }: CircularMenuProps) {
       </button>
 
       {/* Menu Items */}
-      <button
-        onClick={() => handleMenuItemClick('food')}
-        className="circular-menu-item w-12 h-12 bg-red-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center rounded-full"
-        title="Log Food"
-        style={{ transitionDelay: '0.1s' }}
-      >
-        <i className="fas fa-utensils"></i>
-      </button>
 
       <button
         onClick={() => handleMenuItemClick('reports')}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import UserGridModal from '@/components/UserGridModal';
 import { Layout } from '@/components/Layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/context/LanguageContext';
@@ -17,24 +18,28 @@ export default function Appointments() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showNutritionistModal, setShowNutritionistModal] = useState(false);
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [selectedNutritionist, setSelectedNutritionist] = useState('');
+  const [selectedNutritionist, setSelectedNutritionist] = useState<any>(null);
   const [appointmentData, setAppointmentData] = useState({
     scheduledAt: '',
     notes: '',
   });
 
-  const { data: appointments, isLoading } = useQuery({
+
+  const { data: appointmentsRaw, isLoading } = useQuery({
     queryKey: ['/api/appointments'],
     enabled: isAuthenticated,
     retry: false,
   });
+  const appointments = Array.isArray(appointmentsRaw) ? appointmentsRaw : [];
 
-  const { data: nutritionists } = useQuery({
+  const { data: nutritionistsRaw } = useQuery({
     queryKey: ['/api/nutritionists'],
     enabled: isAuthenticated,
     retry: false,
   });
+  const nutritionists = Array.isArray(nutritionistsRaw) ? nutritionistsRaw : [];
 
   const bookAppointmentMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -125,7 +130,7 @@ export default function Appointments() {
             <p className="text-gray-600 dark:text-gray-400">Manage your nutritionist consultations</p>
           </div>
           <Button 
-            onClick={() => setShowBookingForm(!showBookingForm)}
+            onClick={() => setShowNutritionistModal(true)}
             className="bg-nutricare-green hover:bg-nutricare-dark"
           >
             <i className="fas fa-plus mr-2"></i>
@@ -133,33 +138,28 @@ export default function Appointments() {
           </Button>
         </div>
 
+        {/* Nutritionist Selection Modal */}
+        <UserGridModal
+          isOpen={showNutritionistModal}
+          onClose={() => setShowNutritionistModal(false)}
+          nutritionists={nutritionists}
+          onSelect={(nutritionist) => {
+            setSelectedNutritionist(nutritionist);
+            setShowNutritionistModal(false);
+            setShowBookingForm(true);
+          }}
+        />
+
         {/* Booking Form */}
-        {showBookingForm && (
-          <Card className="mb-8">
+        {showBookingForm && selectedNutritionist && (
+          <Card className="mb-8 glass shadow-lg border-none">
             <CardHeader>
               <CardTitle>Book New Appointment</CardTitle>
+              <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+                <span className="font-semibold">Nutritionist:</span> Dr. Nutritionist ({selectedNutritionist.specialization}, {selectedNutritionist.experience} yrs)
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Select Nutritionist</label>
-                <Select value={selectedNutritionist} onValueChange={setSelectedNutritionist}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a nutritionist" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {nutritionists?.map((nutritionist: any) => (
-                      <SelectItem key={nutritionist.id} value={nutritionist.id}>
-                        <div>
-                          <div className="font-medium">Dr. Nutritionist</div>
-                          <div className="text-sm text-gray-500">
-                            {nutritionist.specialization} • {nutritionist.experience} years
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div>
                 <label className="block text-sm font-medium mb-2">Appointment Date & Time</label>
@@ -199,7 +199,7 @@ export default function Appointments() {
 
         {/* Available Nutritionists */}
         {nutritionists && nutritionists.length > 0 && (
-          <Card className="mb-8">
+          <Card className="mb-8 glass shadow-lg border-none">
             <CardHeader>
               <CardTitle>Available Nutritionists</CardTitle>
             </CardHeader>
@@ -243,8 +243,8 @@ export default function Appointments() {
           </Card>
         )}
 
-        {/* Appointments List */}
-        <Card>
+  {/* Appointments List */}
+  <Card className="glass shadow-lg border-none">
           <CardHeader>
             <CardTitle>Your Appointments</CardTitle>
           </CardHeader>
