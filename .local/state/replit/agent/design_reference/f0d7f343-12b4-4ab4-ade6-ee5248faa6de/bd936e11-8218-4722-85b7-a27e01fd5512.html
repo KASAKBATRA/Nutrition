@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriCare++ - Smart Health & Nutrition Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'nutricare-green': '#10B981',
+                        'nutricare-dark-green': '#059669',
+                        'nutricare-light-green': '#34D399',
+                        'nutricare-forest': '#065F46',
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'rotate-slow': 'rotate 20s linear infinite',
+                        'pulse-slow': 'pulse 3s infinite',
+                    }
+                }
+            },
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .floating-bg-element {
+            animation: float 6s ease-in-out infinite;
+            opacity: 0.1;
+        }
+        
+        .floating-bg-element:nth-child(2n) {
+            animation-delay: 2s;
+        }
+        
+        .floating-bg-element:nth-child(3n) {
+            animation-delay: 4s;
+        }
+
+        .circular-menu {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            z-index: 1000;
+        }
+
+        .circular-menu-item {
+            position: absolute;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .circular-menu.active .circular-menu-item {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .circular-menu.active .circular-menu-item:nth-child(2) { transform: translate(-80px, -20px) scale(1); }
+        .circular-menu.active .circular-menu-item:nth-child(3) { transform: translate(-60px, -70px) scale(1); }
+        .circular-menu.active .circular-menu-item:nth-child(4) { transform: translate(0px, -80px) scale(1); }
+        .circular-menu.active .circular-menu-item:nth-child(5) { transform: translate(60px, -70px) scale(1); }
+        .circular-menu.active .circular-menu-item:nth-child(6) { transform: translate(80px, -20px) scale(1); }
+        .circular-menu.active .circular-menu-item:nth-child(7) { transform: translate(60px, 30px) scale(1); }
+    </style>
+</head>
+<body class="font-inter bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
+    
+    <!-- Floating Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <!-- A vibrant green apple with water droplets -->
+        <img src="https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" 
+             class="floating-bg-element absolute top-20 left-10 w-16 h-16 rounded-full object-cover dark:opacity-5" alt="Apple">
+        
+        <!-- Fresh orange slices arranged artistically -->
+        <img src="https://images.unsplash.com/photo-1582979512210-99b6a53386f9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" 
+             class="floating-bg-element absolute top-40 right-20 w-20 h-20 rounded-full object-cover dark:opacity-5" alt="Orange slices">
+        
+        <!-- Colorful mixed vegetables including carrots and broccoli -->
+        <img src="https://images.unsplash.com/photo-1574484284002-952d92456975?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" 
+             class="floating-bg-element absolute top-60 left-1/4 w-14 h-14 rounded-full object-cover dark:opacity-5" alt="Mixed vegetables">
+        
+        <!-- Fresh green leafy spinach leaves -->
+        <img src="https://images.unsplash.com/photo-1576045057995-568f588f82fb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" 
+             class="floating-bg-element absolute bottom-40 right-10 w-18 h-18 rounded-full object-cover dark:opacity-5" alt="Spinach leaves">
+        
+        <!-- Vibrant blueberries in a wooden bowl -->
+        <img src="https://images.unsplash.com/photo-1498557850523-fd3d118b962e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" 
+             class="floating-bg-element absolute bottom-20 left-16 w-16 h-16 rounded-full object-cover dark:opacity-5" alt="Blueberries">
+        
+        <!-- Ripe red strawberries with green leaves -->
+        <img src="https://images.unsplash.com/photo-1464965911861-746a04b4bca6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" 
+             class="floating-bg-element absolute top-32 right-1/3 w-12 h-12 rounded-full object-cover dark:opacity-5" alt="Strawberries">
+        
+        <!-- Fresh avocado cut in half showing the pit -->
+        <img src="https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" 
+             class="floating-bg-element absolute bottom-60 left-1/2 w-20 h-20 rounded-full object-cover dark:opacity-5" alt="Avocado">
+        
+        <!-- Colorful bell peppers in various colors -->
+        <img src="https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" 
+             class="floating-bg-element absolute top-80 left-20 w-14 h-14 rounded-full object-cover dark:opacity-5" alt="Bell peppers">
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-lg relative z-10 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <!-- Logo and App Name -->
+                <div class="flex items-center space-x-3">
+                    <div class="bg-gradient-to-r from-nutricare-green to-nutricare-light-green p-2 rounded-full">
+                        <i class="fas fa-leaf text-white text-xl"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-nutricare-green to-nutricare-forest bg-clip-text text-transparent">
+                        NutriCare++
+                    </h1>
+                </div>
+
+                <!-- Header Controls -->
+                <div class="flex items-center space-x-6">
+                    <!-- Language Toggle -->
+                    <div class="relative">
+                        <select class="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-nutricare-green">
+                            <option value="en">🇺🇸 English</option>
+                            <option value="hi">🇮🇳 Hindi</option>
+                            <option value="ur">🇵🇰 Urdu</option>
+                            <option value="pa">🇮🇳 Punjabi</option>
+                            <option value="mr">🇮🇳 Marathi</option>
+                            <option value="gu">🇮🇳 Gujarati</option>
+                        </select>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="flex items-center space-x-4">
+                        <!-- Food Reminder Notifications -->
+                        <button class="relative p-2 text-gray-600 dark:text-gray-300 hover:text-nutricare-green transition-colors">
+                            <i class="fas fa-utensils text-lg"></i>
+                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">3</span>
+                        </button>
+
+                        <!-- Friend Activity Notifications -->
+                        <button class="relative p-2 text-gray-600 dark:text-gray-300 hover:text-nutricare-green transition-colors">
+                            <i class="fas fa-user-friends text-lg"></i>
+                            <span class="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">2</span>
+                        </button>
+
+                        <!-- Community Post Notifications -->
+                        <button class="relative p-2 text-gray-600 dark:text-gray-300 hover:text-nutricare-green transition-colors">
+                            <i class="fas fa-comments text-lg"></i>
+                            <span class="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">7</span>
+                        </button>
+
+                        <!-- Progress Tracking -->
+                        <div class="relative">
+                            <button class="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                                <i class="fas fa-chart-line text-nutricare-green"></i>
+                                <span class="text-sm font-medium">Progress</span>
+                            </button>
+                            <div class="absolute top-full right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 hidden group-hover:block">
+                                <div class="py-2">
+                                    <button class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Daily View</button>
+                                    <button class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Weekly View</button>
+                                    <button class="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700">Monthly View</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200">
+                        <i id="themeIcon" class="fas fa-moon dark:hidden"></i>
+                        <i id="themeIconDark" class="fas fa-sun hidden dark:block"></i>
+                    </button>
+
+                    <!-- Auth Buttons -->
+                    <div class="flex items-center space-x-4">
+                        <button class="px-4 py-2 text-nutricare-green border border-nutricare-green rounded-lg hover:bg-nutricare-green hover:text-white transition-all duration-200">
+                            Sign In
+                        </button>
+                        <button class="px-4 py-2 bg-nutricare-green text-white rounded-lg hover:bg-nutricare-dark-green transition-all duration-200">
+                            Register
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex min-h-screen relative z-10">
+        <!-- Left Sidebar - Motivational Quotes -->
+        <div class="hidden lg:block w-80 bg-gradient-to-br from-nutricare-light-green/20 to-nutricare-green/20 dark:from-nutricare-forest/20 dark:to-nutricare-dark-green/20 p-6 border-r border-gray-200 dark:border-gray-700">
+            <div class="sticky top-6">
+                <h3 class="text-lg font-semibold mb-6 text-nutricare-forest dark:text-nutricare-light-green">
+                    <i class="fas fa-quote-left mr-2"></i>
+                    Daily Motivation
+                </h3>
+                <div id="motivationalQuote" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg">
+                    <p class="text-gray-700 dark:text-gray-300 italic text-lg leading-relaxed mb-4">
+                        "Take care of your body. It's the only place you have to live."
+                    </p>
+                    <p class="text-nutricare-green font-medium">— Jim Rohn</p>
+                </div>
+                
+                <!-- Additional motivational elements -->
+                <div class="mt-8 space-y-4">
+                    <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-4 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-fire text-orange-500 mr-2"></i>
+                            <span class="text-sm font-medium">Daily Streak</span>
+                        </div>
+                        <p class="text-2xl font-bold text-nutricare-green">12 days</p>
+                    </div>
+                    
+                    <div class="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-4 rounded-lg">
+                        <div class="flex items-center mb-2">
+                            <i class="fas fa-trophy text-yellow-500 mr-2"></i>
+                            <span class="text-sm font-medium">This Week</span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">5 healthy meals logged!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 p-6 lg:p-8">
+            <!-- Dashboard Header -->
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome back, Sarah!</h2>
+                <p class="text-gray-600 dark:text-gray-400">Here's your health journey today</p>
+            </div>
+
+            <!-- Dashboard Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Calorie Intake Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">
+                            <i class="fas fa-fire text-red-500 text-xl"></i>
+                        </div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Today</span>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Calories</h3>
+                    <div class="flex items-end space-x-2">
+                        <span class="text-2xl font-bold text-gray-900 dark:text-white">1,247</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">/ 2,000</span>
+                    </div>
+                    <div class="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-red-500 h-2 rounded-full" style="width: 62%"></div>
+                    </div>
+                </div>
+
+                <!-- Hydration Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-full">
+                            <i class="fas fa-tint text-blue-500 text-xl"></i>
+                        </div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Today</span>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Water</h3>
+                    <div class="flex items-end space-x-2">
+                        <span class="text-2xl font-bold text-gray-900 dark:text-white">6.2</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">/ 8 glasses</span>
+                    </div>
+                    <div class="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full" style="width: 78%"></div>
+                    </div>
+                </div>
+
+                <!-- Weight Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-nutricare-green/20 rounded-full">
+                            <i class="fas fa-weight text-nutricare-green text-xl"></i>
+                        </div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">This week</span>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Weight</h3>
+                    <div class="flex items-end space-x-2">
+                        <span class="text-2xl font-bold text-gray-900 dark:text-white">68.2</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">kg</span>
+                    </div>
+                    <div class="flex items-center mt-2">
+                        <i class="fas fa-arrow-down text-green-500 text-sm mr-1"></i>
+                        <span class="text-sm text-green-500">-0.5kg from last week</span>
+                    </div>
+                </div>
+
+                <!-- BMI Card -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all duration-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="p-3 bg-purple-100 dark:bg-purple-900/20 rounded-full">
+                            <i class="fas fa-calculator text-purple-500 text-xl"></i>
+                        </div>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Current</span>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">BMI</h3>
+                    <div class="flex items-end space-x-2">
+                        <span class="text-2xl font-bold text-gray-900 dark:text-white">22.8</span>
+                        <span class="text-sm text-green-500 dark:text-green-400">Normal</span>
+                    </div>
+                    <div class="mt-2">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Healthy range: 18.5-24.9</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Daily Food Log -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                <i class="fas fa-utensils text-nutricare-green mr-2"></i>
+                                Today's Meals
+                            </h3>
+                            <button class="px-4 py-2 bg-nutricare-green text-white rounded-lg hover:bg-nutricare-dark-green transition-colors text-sm">
+                                <i class="fas fa-plus mr-1"></i>
+                                Add Meal
+                            </button>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Breakfast -->
+                            <div class="flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-900/10 rounded-lg border border-orange-200 dark:border-orange-800">
+                                <div class="flex items-center space-x-4">
+                                    <div class="p-2 bg-orange-500 rounded-full">
+                                        <i class="fas fa-sun text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900 dark:text-white">Breakfast</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Oatmeal with berries, Greek yogurt</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-gray-900 dark:text-white">385 cal</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">8:30 AM</p>
+                                </div>
+                            </div>
+
+                            <!-- Lunch -->
+                            <div class="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                                <div class="flex items-center space-x-4">
+                                    <div class="p-2 bg-yellow-500 rounded-full">
+                                        <i class="fas fa-sun text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900 dark:text-white">Lunch</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Grilled chicken salad, quinoa</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-gray-900 dark:text-white">520 cal</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">1:15 PM</p>
+                                </div>
+                            </div>
+
+                            <!-- Snack -->
+                            <div class="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
+                                <div class="flex items-center space-x-4">
+                                    <div class="p-2 bg-green-500 rounded-full">
+                                        <i class="fas fa-apple-alt text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-900 dark:text-white">Snack</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Mixed nuts, apple</p>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-gray-900 dark:text-white">180 cal</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">4:00 PM</p>
+                                </div>
+                            </div>
+
+                            <!-- Dinner - Placeholder -->
+                            <div class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+                                <div class="flex items-center space-x-4">
+                                    <div class="p-2 bg-gray-400 rounded-full">
+                                        <i class="fas fa-moon text-white text-sm"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-medium text-gray-500 dark:text-gray-400">Dinner</h4>
+                                        <p class="text-sm text-gray-400 dark:text-gray-500">Not logged yet</p>
+                                    </div>
+                                </div>
+                                <button class="px-3 py-1 text-sm text-nutricare-green border border-nutricare-green rounded-lg hover:bg-nutricare-green hover:text-white transition-colors">
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Community Feed Preview -->
+                    <div class="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                <i class="fab fa-instagram text-pink-500 mr-2"></i>
+                                Community Feed
+                            </h3>
+                            <button class="text-nutricare-green hover:text-nutricare-dark-green transition-colors">
+                                View All <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+
+                        <!-- Feed Post -->
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-pink-400 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold">
+                                    J
+                                </div>
+                                <div>
+                                    <h4 class="font-medium text-gray-900 dark:text-white">Jessica Chen</h4>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">2 hours ago</p>
+                                </div>
+                            </div>
+                            <!-- Colorful smoothie bowl with fresh fruits and granola toppings -->
+                            <img src="https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=400" 
+                                 alt="Colorful smoothie bowl" class="w-full h-48 object-cover rounded-lg mb-3">
+                            <p class="text-gray-700 dark:text-gray-300 mb-3">Just made this amazing acai bowl! Perfect start to my morning 🌟 #healthyeating #nutrition</p>
+                            <div class="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                                <button class="flex items-center space-x-1 hover:text-red-500 transition-colors">
+                                    <i class="far fa-heart"></i>
+                                    <span>24</span>
+                                </button>
+                                <button class="flex items-center space-x-1 hover:text-blue-500 transition-colors">
+                                    <i class="far fa-comment"></i>
+                                    <span>7</span>
+                                </button>
+                                <button class="flex items-center space-x-1 hover:text-green-500 transition-colors">
+                                    <i class="far fa-share"></i>
+                                    <span>Share</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar -->
+                <div class="space-y-6">
+                    <!-- Quick Actions -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button class="w-full flex items-center space-x-3 p-3 bg-nutricare-green/10 hover:bg-nutricare-green/20 rounded-lg transition-colors">
+                                <i class="fas fa-camera-retro text-nutricare-green"></i>
+                                <span class="text-gray-700 dark:text-gray-300">Scan Food Label</span>
+                            </button>
+                            <button class="w-full flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors">
+                                <i class="fas fa-calendar-plus text-blue-500"></i>
+                                <span class="text-gray-700 dark:text-gray-300">Book Appointment</span>
+                            </button>
+                            <button class="w-full flex items-center space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-colors">
+                                <i class="fas fa-chart-bar text-purple-500"></i>
+                                <span class="text-gray-700 dark:text-gray-300">View Reports</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upcoming Appointments -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Upcoming Appointments</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-white">Dr. Sarah Wilson</p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Nutritionist Consultation</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white">Tomorrow</p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">2:00 PM</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Friends Activity -->
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Friends Activity</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                    M
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-medium">Mike</span> completed his daily goal</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">30 mins ago</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 bg-gradient-to-r from-pink-400 to-red-400 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                                    A
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm text-gray-700 dark:text-gray-300"><span class="font-medium">Anna</span> shared a healthy recipe</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">1 hour ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Circular Floating Menu -->
+    <div class="circular-menu" id="circularMenu">
+        <!-- Main Menu Button -->
+        <button class="w-16 h-16 bg-gradient-to-r from-nutricare-green to-nutricare-light-green text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center text-xl relative z-10">
+            <i id="menuIcon" class="fas fa-plus"></i>
+        </button>
+
+        <!-- Menu Items -->
+        <button class="circular-menu-item w-12 h-12 bg-red-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center" title="Log Food">
+            <i class="fas fa-utensils"></i>
+        </button>
+        <button class="circular-menu-item w-12 h-12 bg-blue-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center" title="Reports">
+            <i class="fas fa-chart-bar"></i>
+        </button>
+        <button class="circular-menu-item w-12 h-12 bg-green-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center" title="Appointments">
+            <i class="fas fa-calendar-check"></i>
+        </button>
+        <button class="circular-menu-item w-12 h-12 bg-purple-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center" title="Community Feed">
+            <i class="fab fa-instagram"></i>
+        </button>
+        <button class="circular-menu-item w-12 h-12 bg-pink-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center" title="Friends">
+            <i class="fas fa-user-friends"></i>
+        </button>
+        <button class="circular-menu-item w-12 h-12 bg-orange-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center" title="AI Chatbot">
+            <i class="fas fa-robot"></i>
+        </button>
+    </div>
+
+    <!-- AI Chatbot -->
+    <div id="chatbot" class="fixed bottom-4 left-4 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 hidden z-50">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-gradient-to-r from-nutricare-green to-nutricare-light-green rounded-full flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-sm"></i>
+                </div>
+                <h3 class="font-semibold text-gray-900 dark:text-white">NutriCare AI</h3>
+            </div>
+            <button id="closeChatbot" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="h-64 overflow-y-auto p-4 bg-gray-50 dark:bg-gray-900/50">
+            <div class="space-y-3">
+                <div class="flex items-start space-x-2">
+                    <div class="w-6 h-6 bg-gradient-to-r from-nutricare-green to-nutricare-light-green rounded-full flex items-center justify-center mt-1">
+                        <i class="fas fa-robot text-white text-xs"></i>
+                    </div>
+                    <div class="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm max-w-56">
+                        <p class="text-sm text-gray-700 dark:text-gray-300">Hello! I'm here to help you with your nutrition and health goals. What would you like to know?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex space-x-2">
+                <input type="text" placeholder="Ask me anything..." class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-nutricare-green text-sm">
+                <button class="px-4 py-2 bg-nutricare-green text-white rounded-lg hover:bg-nutricare-dark-green transition-colors">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chatbot Toggle Button (when closed) -->
+    <button id="chatbotToggle" class="fixed bottom-4 left-4 w-12 h-12 bg-gradient-to-r from-nutricare-green to-nutricare-light-green text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center z-40">
+        <i class="fas fa-comments"></i>
+    </button>
+
+    <script>
+        // Immediately Invoked Function Expression to avoid global namespace pollution
+        (function() {
+            // Theme Toggle Functionality
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
+            
+            // Check for saved theme preference or default to light
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                html.classList.add('dark');
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                html.classList.toggle('dark');
+                const theme = html.classList.contains('dark') ? 'dark' : 'light';
+                localStorage.setItem('theme', theme);
+            });
+
+            // Motivational Quotes Rotation
+            const quotes = [
+                { text: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" },
+                { text: "Health is not about the weight you lose, but about the life you gain.", author: "Dr. Josh Axe" },
+                { text: "Your body can stand almost anything. It's your mind that you have to convince.", author: "Unknown" },
+                { text: "A healthy outside starts from the inside.", author: "Robert Urich" },
+                { text: "The first wealth is health.", author: "Ralph Waldo Emerson" },
+                { text: "Eating well is a form of self-respect.", author: "Unknown" },
+                { text: "Good nutrition creates health in all areas of our existence.", author: "T. Colin Campbell" }
+            ];
+            
+            let currentQuoteIndex = 0;
+            const quoteElement = document.getElementById('motivationalQuote');
+            
+            function updateQuote() {
+                const quote = quotes[currentQuoteIndex];
+                quoteElement.innerHTML = `
+                    <p class="text-gray-700 dark:text-gray-300 italic text-lg leading-relaxed mb-4">
+                        "${quote.text}"
+                    </p>
+                    <p class="text-nutricare-green font-medium">— ${quote.author}</p>
+                `;
+                currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+            }
+            
+            // Rotate quotes every 10 seconds
+            setInterval(updateQuote, 10000);
+
+            // Circular Menu Functionality
+            const circularMenu = document.getElementById('circularMenu');
+            const menuIcon = document.getElementById('menuIcon');
+            let isMenuOpen = false;
+            
+            circularMenu.addEventListener('click', function(e) {
+                if (e.target.closest('.circular-menu-item')) return; // Don't toggle if clicking on menu item
+                
+                isMenuOpen = !isMenuOpen;
+                circularMenu.classList.toggle('active', isMenuOpen);
+                
+                if (isMenuOpen) {
+                    menuIcon.classList.remove('fa-plus');
+                    menuIcon.classList.add('fa-times');
+                } else {
+                    menuIcon.classList.remove('fa-times');
+                    menuIcon.classList.add('fa-plus');
+                }
+            });
+
+            // Chatbot Functionality
+            const chatbot = document.getElementById('chatbot');
+            const chatbotToggle = document.getElementById('chatbotToggle');
+            const closeChatbot = document.getElementById('closeChatbot');
+            
+            chatbotToggle.addEventListener('click', function() {
+                chatbot.classList.remove('hidden');
+                chatbotToggle.classList.add('hidden');
+            });
+            
+            closeChatbot.addEventListener('click', function() {
+                chatbot.classList.add('hidden');
+                chatbotToggle.classList.remove('hidden');
+            });
+
+            // Circular menu item click handlers
+            const menuItems = document.querySelectorAll('.circular-menu-item');
+            menuItems.forEach((item, index) => {
+                item.addEventListener('click', function() {
+                    const actions = [
+                        () => console.log('Opening food logging...'), // Log Food
+                        () => console.log('Opening reports...'), // Reports
+                        () => console.log('Opening appointments...'), // Appointments
+                        () => console.log('Opening community feed...'), // Feed
+                        () => console.log('Opening friends...'), // Friends
+                        () => { // Chatbot
+                            chatbot.classList.remove('hidden');
+                            chatbotToggle.classList.add('hidden');
+                        }
+                    ];
+                    
+                    if (actions[index]) {
+                        actions[index]();
+                    }
+                    
+                    // Close menu after action
+                    isMenuOpen = false;
+                    circularMenu.classList.remove('active');
+                    menuIcon.classList.remove('fa-times');
+                    menuIcon.classList.add('fa-plus');
+                });
+            });
+
+            // TODO: Implement business logic, API calls, or state management for:
+            // - User authentication with Replit Auth
+            // - PostgreSQL database connections for food logs, appointments, notifications
+            // - OpenAI integration for comprehensive AI chatbot responses
+            // - Real-time notification system for friend activities
+            // - Progress tracking with data visualization
+            // - Multi-language content switching
+            // - Food label scanning with camera API
+            // - Appointment booking system with nutritionist profiles
+            
+        })();
+    </script>
+</body>
+</html>
