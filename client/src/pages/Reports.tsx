@@ -301,10 +301,22 @@ export default function Reports() {
       doc.line(x1, y1, x2, y2);
     };
 
-    // Helper function to add section separator
+    // Enhanced helper function to add section separator with style
     const addSectionSeparator = (y: number) => {
-      drawLine(10, y, pageWidth - 10, y, { width: 0.3, color: [200, 200, 200] });
-      return y + 8;
+      // Main separator line
+      drawLine(15, y, pageWidth - 15, y, { width: 1.5, color: [129, 199, 132] });
+      
+      // Accent line below
+      drawLine(15, y + 1, pageWidth - 15, y + 1, { width: 0.5, color: [200, 230, 201] });
+      
+      // Add decorative dots
+      const dotSpacing = 30;
+      for (let x = 25; x < pageWidth - 15; x += dotSpacing) {
+        doc.setFillColor(129, 199, 132);
+        doc.circle(x, y - 1, 0.8, 'F');
+      }
+      
+      return y + 12;
     };
 
     // Add watermark to first page
@@ -765,20 +777,49 @@ export default function Reports() {
       }
     }
     
-    // Enhanced meal frequency insights
+    // BMI insights (enhanced format)
+    if (bmi) {
+      if (bmi < 18.5) {
+        insights.push({
+          text: '⚠ BMI indicates underweight. Consider consulting a nutritionist.',
+          color: [255, 152, 0],
+          bg: [255, 224, 178]
+        });
+      } else if (bmi >= 18.5 && bmi < 25) {
+        insights.push({
+          text: '✓ Your BMI is in the healthy range. Keep it up!',
+          color: [76, 175, 80],
+          bg: [200, 230, 201]
+        });
+      } else if (bmi >= 25 && bmi < 30) {
+        insights.push({
+          text: '⚠ BMI indicates overweight. Consider balanced diet and exercise.',
+          color: [255, 152, 0],
+          bg: [255, 224, 178]
+        });
+      } else {
+        insights.push({
+          text: '⚠ BMI indicates obesity. Recommend consulting healthcare provider.',
+          color: [244, 67, 54],
+          bg: [255, 205, 210]
+        });
+      }
+    }
+    
+    // Meal frequency insights (enhanced format)
     const mealCount = processedData.filteredFoodLogs.length;
     const daysInRange = processedData.daysInRange;
     const mealsPerDay = mealCount / Math.max(1, daysInRange);
     
     if (mealsPerDay < 2) {
       insights.push({
-        text: '⚠ Low meal frequency detected. Aim for 3-4 balanced meals daily.',
+        text: '⚠ Low meal frequency detected. Try to eat 3-4 balanced meals daily.',
         color: [244, 67, 54],
         bg: [255, 205, 210]
       });
     } else if (mealsPerDay >= 3 && mealsPerDay <= 4) {
       insights.push({
-        text: '✓ Excellent meal frequency! You\'re maintaining regular eating habits.',
+        text: '✓ Excellent meal frequency! You\'re eating regularly.',
         color: [76, 175, 80],
         bg: [200, 230, 201]
       });
@@ -790,67 +831,159 @@ export default function Reports() {
       });
     }
     
-    // Enhanced activity level insights
+    // Activity level insights (enhanced format)
     if (userProfile && typeof userProfile === 'object' && 'activityLevel' in userProfile && userProfile.activityLevel) {
       const activity = (userProfile.activityLevel as string).toLowerCase();
       if (activity.includes('sedentary') || activity.includes('low')) {
         insights.push({
-          text: '💪 Consider increasing physical activity for better cardiovascular health.',
+          text: '🏃 Consider increasing physical activity for better health.',
           color: [255, 152, 0],
           bg: [255, 224, 178]
         });
       } else if (activity.includes('moderate')) {
         insights.push({
-          text: '✓ Great activity level! Keep up the moderate exercise routine.',
+          text: '🏃 Good activity level! Keep up the moderate exercise.',
           color: [76, 175, 80],
           bg: [200, 230, 201]
         });
       } else {
         insights.push({
-          text: '✓ Outstanding fitness commitment! Maintain this active lifestyle.',
+          text: '🏃 Excellent activity level! You\'re staying very active.',
           color: [76, 175, 80],
           bg: [200, 230, 201]
         });
       }
     } else {
       insights.push({
-        text: '📊 Track your activity level for personalized fitness recommendations.',
+        text: '📊 Track your activity level for personalized recommendations.',
         color: [103, 58, 183],
         bg: [225, 190, 231]
       });
     }
     
-    // Sleep recommendation
+    // Sleep recommendation (enhanced format)
     insights.push({
-      text: '😴 Aim for 7-8 hours of quality sleep for optimal body recovery.',
+      text: '😴 Aim for 7-8 hours of quality sleep for optimal recovery.',
       color: [103, 58, 183],
       bg: [225, 190, 231]
     });
     
-    // Enhanced display insights with professional formatting
+    // Enhanced insights display with professional styling
     insights.forEach((insight, index) => {
-      // Enhanced insights background container
-      if (insight.bg) {
-        doc.setFillColor(insight.bg[0], insight.bg[1], insight.bg[2]);
-        doc.roundedRect(20, currentY - 5, pageWidth - 50, 12, 3, 3, 'F');
+      // Check if we need space for this insight
+      if (currentY > pageHeight - 50) {
+        // Add footer to current page before creating new page
+        addFooter();
+        doc.addPage();
+        addWatermark();
+        currentY = 20;
       }
       
-      // Add insight border
-      doc.setDrawColor(insight.color[0], insight.color[1], insight.color[2]);
-      doc.setLineWidth(0.8);
-      doc.roundedRect(20, currentY - 5, pageWidth - 50, 12, 3, 3, 'S');
+      let yPos = currentY;
       
-      // Display insight text with enhanced styling
-      currentY = addText(`${insight.text}`, 25, currentY, { 
-        size: 10, 
-        color: insight.color,
-        style: 'normal'
-      });
-      
-      currentY += 5; // Extra spacing between insights
+      // Enhanced insight rendering with background pills
+      if (typeof insight === 'object' && insight.text && insight.color && insight.bg) {
+        // Add background pill for insight
+        const textWidth = doc.getTextWidth(insight.text);
+        const pillWidth = Math.min(textWidth + 10, pageWidth - 40);
+        
+        doc.setFillColor(insight.bg[0], insight.bg[1], insight.bg[2]);
+        doc.roundedRect(20, yPos - 5, pillWidth, 12, 3, 3, 'F');
+        
+        // Add subtle border
+        doc.setDrawColor(insight.color[0], insight.color[1], insight.color[2]);
+        doc.setLineWidth(0.5);
+        doc.roundedRect(20, yPos - 5, pillWidth, 12, 3, 3, 'S');
+        
+        // Add the insight text
+        currentY = addText(`${insight.text}`, 25, currentY, { 
+          size: 10, 
+          color: insight.color, 
+          style: 'bold' 
+        });
+        
+        currentY += 3; // Extra spacing after enhanced insights
+      } else {
+        // Fallback for any string insights that might remain
+        currentY = addText(`• ${insight}`, 20, currentY, { size: 10, color: [60, 60, 60] });
+      }
     });
     
     currentY += 20;
+
+    // Add Professional Summary Statistics Box
+    // Check if we need space for summary
+    if (currentY > pageHeight - 80) {
+      addFooter();
+      doc.addPage();
+      addWatermark();
+      currentY = 20;
+    }
+    
+    // Summary box header
+    currentY = addText('📈 Report Summary & Key Metrics', 15, currentY, { size: 14, style: 'bold', color: [37, 97, 41] });
+    currentY = addSectionSeparator(currentY);
+    
+    // Create summary statistics container
+    doc.setFillColor(252, 254, 255);
+    doc.rect(15, currentY, pageWidth - 30, 45, 'F');
+    
+    // Professional border with rounded corners effect
+    doc.setLineWidth(1.5);
+    doc.setDrawColor(37, 97, 41);
+    doc.rect(15, currentY, pageWidth - 30, 45, 'S');
+    
+    // Inner accent border
+    doc.setLineWidth(0.5);
+    doc.setDrawColor(129, 199, 132);
+    doc.rect(17, currentY + 2, pageWidth - 34, 41, 'S');
+    
+    currentY += 10;
+    
+    // Summary statistics in grid layout
+    const leftCol = 25;
+    const rightCol = 115;
+    
+    // Left column stats
+    let summaryLeftY = currentY;
+    summaryLeftY = addText('📊 Analysis Period', leftCol, summaryLeftY, { size: 10, style: 'bold', color: [46, 125, 50] });
+    summaryLeftY = addText(`🍽️ Total Meals Logged`, leftCol, summaryLeftY + 2, { size: 10, style: 'bold', color: [46, 125, 50] });
+    summaryLeftY = addText('⚖️ Health Score', leftCol, summaryLeftY + 2, { size: 10, style: 'bold', color: [46, 125, 50] });
+    
+    // Right column stats  
+    let summaryRightY = currentY;
+    summaryRightY = addText('💧 Hydration Status', rightCol, summaryRightY, { size: 10, style: 'bold', color: [46, 125, 50] });
+    summaryRightY = addText('🎯 Goals Met', rightCol, summaryRightY + 2, { size: 10, style: 'bold', color: [46, 125, 50] });
+    summaryRightY = addText('📋 Recommendations', rightCol, summaryRightY + 2, { size: 10, style: 'bold', color: [46, 125, 50] });
+    
+    // Values for left column
+    summaryLeftY = currentY;
+    summaryLeftY = addText(`: ${timeRange.toUpperCase()} (${processedData.daysInRange} days)`, leftCol + 45, summaryLeftY, { size: 10, color: [60, 60, 60] });
+    summaryLeftY = addText(`: ${processedData.filteredFoodLogs.length} entries`, leftCol + 45, summaryLeftY + 2, { size: 10, color: [60, 60, 60] });
+    
+    // Calculate health score based on multiple factors
+    let healthScore = 50; // Base score
+    if (avgCalories >= 1800 && avgCalories <= 2200) healthScore += 25;
+    if (avgWater >= 2.0) healthScore += 20;
+    if (bmi && bmi >= 18.5 && bmi < 25) healthScore += 15;
+    healthScore = Math.min(100, healthScore);
+    
+    const scoreColor = healthScore >= 80 ? [76, 175, 80] : healthScore >= 60 ? [255, 152, 0] : [244, 67, 54];
+    addText(`: ${healthScore}/100`, leftCol + 45, summaryLeftY, { size: 10, color: scoreColor, style: 'bold' });
+    
+    // Values for right column
+    summaryRightY = currentY;
+    const hydrationStatus = avgWater >= 2.5 ? 'Excellent ✓' : avgWater >= 2.0 ? 'Good ✓' : 'Needs Improvement ⚠';
+    const hydrationColor = avgWater >= 2.5 ? [76, 175, 80] : avgWater >= 2.0 ? [76, 175, 80] : [255, 152, 0];
+    summaryRightY = addText(`: ${hydrationStatus}`, rightCol + 35, summaryRightY, { size: 10, color: hydrationColor });
+    
+    const goalsMetCount = insights.filter(i => typeof i === 'object' && i.text.includes('✓')).length;
+    summaryRightY = addText(`: ${goalsMetCount}/${insights.length} targets`, rightCol + 35, summaryRightY + 2, { size: 10, color: [60, 60, 60] });
+    
+    const recommendationCount = insights.filter(i => typeof i === 'object' && i.text.includes('⚠')).length;
+    summaryRightY = addText(`: ${recommendationCount} action items`, rightCol + 35, summaryRightY, { size: 10, color: [60, 60, 60] });
+    
+    currentY += 38;
 
     // Check if we need space for footer
     if (currentY > pageHeight - 40) {
@@ -868,33 +1001,48 @@ export default function Reports() {
     addFooter();
     
     // Enhanced Professional Signature Section
+    // Add signature background with gradient effect
     doc.setFillColor(37, 97, 41);
-    doc.rect(0, pageHeight - 38, pageWidth, 20, 'F');
+    doc.rect(0, pageHeight - 40, pageWidth, 25, 'F');
     
-    // Add gradient effect
-    doc.setFillColor(46, 125, 50);
-    doc.rect(0, pageHeight - 36, pageWidth, 16, 'F');
+    // Add accent stripe
+    doc.setFillColor(129, 199, 132);
+    doc.rect(0, pageHeight - 42, pageWidth, 2, 'F');
     
     // Add decorative elements
-    doc.setFillColor(129, 199, 132);
+    doc.setFillColor(46, 125, 50);
     for (let i = 0; i < pageWidth; i += 15) {
-      doc.rect(i, pageHeight - 38, 6, 2, 'F');
+      doc.rect(i, pageHeight - 38, 6, 1, 'F');
     }
     
+    // Add signature text with better positioning
     currentY = pageHeight - 28;
-    addText('🏥 Generated by NutriCare++ AI Healthcare Platform', pageWidth/2 - 85, currentY, { 
+    addText('🏥 Generated by NutriCare++ AI Healthcare Analytics', pageWidth/2 - 85, currentY, { 
       size: 11, 
       style: 'bold', 
       color: [255, 255, 255] 
     });
     
-    addText('Trusted by Health Professionals Worldwide', pageWidth/2 - 65, currentY + 8, { 
+    // Add timestamp and verification
+    currentY = pageHeight - 18;
+    const timestamp = new Date().toLocaleString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    addText(`📅 Report Generated: ${timestamp}`, pageWidth/2 - 65, currentY, { 
       size: 9, 
-      style: 'italic', 
+      style: 'normal', 
       color: [200, 230, 201] 
     });
 
-    doc.save(`nutricare-professional-report-${timeRange}-${new Date().toISOString().split('T')[0]}.pdf`);
+    // Enhanced file naming with better format
+    const formattedDate = new Date().toISOString().split('T')[0];
+    const fileName = `NutriCare-Professional-Health-Report-${timeRange.toUpperCase()}-${formattedDate}.pdf`;
+    
+    doc.save(fileName);
 
     toast({
       title: "Success",

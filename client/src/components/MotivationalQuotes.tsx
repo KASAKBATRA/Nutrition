@@ -53,34 +53,14 @@ export function MotivationalQuotes() {
 
   return (
     <div className="sticky top-6">
-      <h3 className="text-lg font-semibold mb-6 text-nutricare-forest dark:text-nutricare-light">
-        <i className="fas fa-quote-left mr-2"></i>
-        Daily Motivation
-      </h3>
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm p-6 rounded-xl shadow-lg">
-        <p className="text-gray-700 dark:text-gray-300 italic text-lg leading-relaxed mb-4">
-          "{currentQuote.text}"
+      {/* Motivational quote section removed as per user request */}
+      <div className="text-center py-8">
+        <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+          <i className="fas fa-leaf text-nutricare-green text-xl"></i>
+        </div>
+        <p className="text-gray-500 dark:text-gray-400">
+          Stay healthy, stay motivated!
         </p>
-        <p className="text-nutricare-green font-medium">— {currentQuote.author}</p>
-      </div>
-      
-      {/* Additional motivational elements */}
-      <div className="mt-8 space-y-4">
-        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-4 rounded-lg">
-          <div className="flex items-center mb-2">
-            <i className="fas fa-fire text-orange-500 mr-2"></i>
-            <span className="text-sm font-medium">Daily Streak</span>
-          </div>
-          <p className="text-2xl font-bold text-nutricare-green">12 days</p>
-        </div>
-        
-        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm p-4 rounded-lg">
-          <div className="flex items-center mb-2">
-            <i className="fas fa-trophy text-yellow-500 mr-2"></i>
-            <span className="text-sm font-medium">This Week</span>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">5 healthy meals logged!</p>
-        </div>
       </div>
     </div>
   );
