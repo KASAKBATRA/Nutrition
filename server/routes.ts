@@ -3,6 +3,13 @@ import { createServer, type Server } from "http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db";
+
+// Extend express-session types to include userId
+declare module "express-session" {
+  interface SessionData {
+    userId?: string | number;
+  }
+}
 import { storage } from "./storage";
 import { sendMail } from "./email";
 import { generateChatResponse } from "./openai";
@@ -209,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/food-logs', requireAuth, async (req: any, res) => {
     try {
       const userId = getUserId(req);
-      const date = req.query.date ? new Date(req.query.date as string) : new Date();
+      const date = req.query.date ? new Date(req.query.date as string) : undefined;
       const logs = await storage.getFoodLogs(userId, date);
       res.json(logs);
     } catch (error) {
@@ -411,7 +418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/water-logs', requireAuth, async (req: any, res) => {
     try {
       const userId = getUserId(req);
-      const date = req.query.date ? new Date(req.query.date as string) : new Date();
+      const date = req.query.date ? new Date(req.query.date as string) : undefined;
       const logs = await storage.getWaterLogs(userId, date);
       res.json(logs);
     } catch (error) {
@@ -423,7 +430,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/water-logs', requireAuth, async (req: any, res) => {
     try {
       const userId = getUserId(req);
-      const logData = { ...req.body, userId };
+      const { date, ...rest } = req.body;
+      const logData = { 
+        ...rest, 
+        userId,
+        date: new Date(date)
+      };
       const log = await storage.createWaterLog(logData);
       res.json(log);
     } catch (error) {
@@ -698,7 +710,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { language, theme } = req.body;
       
       const updatedUser = await storage.upsertUser({
-        id: userId,
         language,
         theme,
       });

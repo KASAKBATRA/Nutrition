@@ -88,6 +88,7 @@ interface Friend {
 import { useLocation } from 'wouter';
 import { Layout } from '@/components/Layout';
 import { MealModal } from '@/components/MealModal';
+import { WaterModal } from '@/components/WaterModal';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/context/LanguageContext';
 import { useToast } from '@/hooks/use-toast';
@@ -163,6 +164,7 @@ export default function Dashboard() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [isMealModalOpen, setIsMealModalOpen] = useState(false);
+  const [isWaterModalOpen, setIsWaterModalOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<any>(null);
   const queryClient = useQueryClient();
 
@@ -444,6 +446,13 @@ export default function Dashboard() {
             <div className="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${waterProgress}%` }}></div>
             </div>
+            <button 
+              onClick={() => setIsWaterModalOpen(true)}
+              className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors duration-200 text-sm font-medium"
+            >
+              <i className="fas fa-plus mr-2"></i>
+              Add Water
+            </button>
           </div>
 
           {/* Protein Card */}
@@ -757,6 +766,12 @@ export default function Dashboard() {
           // The modal will handle the query invalidation
         }}
         editingMeal={editingMeal}
+      />
+
+      {/* Water Modal */}
+      <WaterModal
+        isOpen={isWaterModalOpen}
+        onClose={() => setIsWaterModalOpen(false)}
       />
     </Layout>
   );

@@ -264,28 +264,30 @@ export class DatabaseStorage implements IStorage {
 
   // Food logging
   async getFoodLogs(userId: string, date?: Date): Promise<FoodLog[]> {
-    let query = db
-      .select()
-      .from(foodLogs)
-      .where(eq(foodLogs.userId, userId))
-      .orderBy(desc(foodLogs.loggedAt));
-
     if (date) {
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
       
-      query = query.where(
-        and(
-          eq(foodLogs.userId, userId),
-          gte(foodLogs.date, startOfDay),
-          lte(foodLogs.date, endOfDay)
+      return await db
+        .select()
+        .from(foodLogs)
+        .where(
+          and(
+            eq(foodLogs.userId, userId),
+            gte(foodLogs.date, startOfDay),
+            lte(foodLogs.date, endOfDay)
+          )
         )
-      );
+        .orderBy(desc(foodLogs.loggedAt));
     }
 
-    return await query;
+    return await db
+      .select()
+      .from(foodLogs)
+      .where(eq(foodLogs.userId, userId))
+      .orderBy(desc(foodLogs.loggedAt));
   }
 
   async createFoodLog(foodLog: InsertFoodLog): Promise<FoodLog> {
@@ -305,18 +307,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFoodItems(search?: string): Promise<FoodItem[]> {
-    let query = db.select().from(foodItems);
-    
     if (search) {
-      query = query.where(
-        or(
-          sql`${foodItems.name} ILIKE ${`%${search}%`}`,
-          sql`${foodItems.brand} ILIKE ${`%${search}%`}`
+      return await db.select().from(foodItems)
+        .where(
+          or(
+            sql`${foodItems.name} ILIKE ${`%${search}%`}`,
+            sql`${foodItems.brand} ILIKE ${`%${search}%`}`
+          )
         )
-      );
+        .limit(50);
     }
     
-    return await query.limit(50);
+    return await db.select().from(foodItems).limit(50);
   }
 
   async createOrGetFoodItem(name: string, nutritionPer100g: {
@@ -393,28 +395,30 @@ export class DatabaseStorage implements IStorage {
 
   // Water logging
   async getWaterLogs(userId: string, date?: Date): Promise<WaterLog[]> {
-    let query = db
-      .select()
-      .from(waterLogs)
-      .where(eq(waterLogs.userId, userId))
-      .orderBy(desc(waterLogs.loggedAt));
-
     if (date) {
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
       
-      query = query.where(
-        and(
-          eq(waterLogs.userId, userId),
-          gte(waterLogs.date, startOfDay),
-          lte(waterLogs.date, endOfDay)
+      return await db
+        .select()
+        .from(waterLogs)
+        .where(
+          and(
+            eq(waterLogs.userId, userId),
+            gte(waterLogs.date, startOfDay),
+            lte(waterLogs.date, endOfDay)
+          )
         )
-      );
+        .orderBy(desc(waterLogs.loggedAt));
     }
 
-    return await query;
+    return await db
+      .select()
+      .from(waterLogs)
+      .where(eq(waterLogs.userId, userId))
+      .orderBy(desc(waterLogs.loggedAt));
   }
 
   async createWaterLog(waterLog: InsertWaterLog): Promise<WaterLog> {
