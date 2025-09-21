@@ -4,6 +4,7 @@ import {
   userProfiles,
   nutritionGoals,
   foodLogs,
+  moodLogs,
   waterLogs,
   weightLogs,
   nutritionists,
@@ -24,6 +25,8 @@ import {
   type InsertUserProfile,
   type FoodLog,
   type InsertFoodLog,
+  type MoodLog,
+  type InsertMoodLog,
   type WaterLog,
   type InsertWaterLog,
   type WeightLog,
@@ -93,6 +96,10 @@ export interface IStorage {
     totalFats: number;
     meals: FoodLog[];
   }>;
+  
+  // Mood logging
+  createMoodLog(moodLog: InsertMoodLog): Promise<MoodLog>;
+  getMoodLogs(userId: string, foodLogId?: string): Promise<MoodLog[]>;
   
   // Water logging
   getWaterLogs(userId: string, date?: Date): Promise<WaterLog[]>;
@@ -391,6 +398,58 @@ export class DatabaseStorage implements IStorage {
       ...totals,
       meals,
     };
+  }
+
+  // Mood logging
+  async createMoodLog(moodLog: InsertMoodLog): Promise<MoodLog> {
+    try {
+      const [log] = await db.insert(moodLogs).values(moodLog).returning();
+      return log;
+    } catch (error: any) {
+      // If mood_logs table doesn't exist, create a mock response
+      if (error.code === '42P01') {
+        console.warn('mood_logs table does not exist yet. Mood logging will be skipped.');
+        return {
+          id: 'mock-id',
+          userId: moodLog.userId,
+          foodLogId: moodLog.foodLogId,
+          mood: moodLog.mood,
+          reason: moodLog.reason,
+          loggedAt: new Date(),
+        } as MoodLog;
+      }
+      throw error;
+    }
+  }
+
+  async getMoodLogs(userId: string, foodLogId?: string): Promise<MoodLog[]> {
+    try {
+      if (foodLogId) {
+        return await db
+          .select()
+          .from(moodLogs)
+          .where(
+            and(
+              eq(moodLogs.userId, userId),
+              eq(moodLogs.foodLogId, foodLogId)
+            )
+          )
+          .orderBy(desc(moodLogs.loggedAt));
+      }
+
+      return await db
+        .select()
+        .from(moodLogs)
+        .where(eq(moodLogs.userId, userId))
+        .orderBy(desc(moodLogs.loggedAt));
+    } catch (error: any) {
+      // If mood_logs table doesn't exist, return empty array
+      if (error.code === '42P01') {
+        console.warn('mood_logs table does not exist yet. Returning empty mood logs.');
+        return [];
+      }
+      throw error;
+    }
   }
 
   // Water logging

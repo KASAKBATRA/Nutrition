@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation } from 'wouter';
+import { HelpDialog } from './HelpDialog';
 
 interface CircularMenuProps {
   onChatbotOpen: () => void;
@@ -93,6 +94,16 @@ export function CircularMenu({ onChatbotOpen }: CircularMenuProps) {
       >
         <i className="fas fa-robot"></i>
       </button>
+
+      <HelpDialog>
+        <button
+          className="circular-menu-item w-12 h-12 bg-indigo-500 text-white shadow-lg hover:shadow-xl transform hover:scale-110 transition-all duration-200 flex items-center justify-center rounded-full"
+          title="Help & Guide"
+          style={{ transitionDelay: '0.7s' }}
+        >
+          <i className="fas fa-question-circle"></i>
+        </button>
+      </HelpDialog>
     </div>
   );
 }

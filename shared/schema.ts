@@ -116,6 +116,16 @@ export const foodLogs = pgTable("food_logs", {
   date: timestamp("date").notNull(),
 });
 
+// Mood tracking logs (linked to meals)
+export const moodLogs = pgTable("mood_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  foodLogId: varchar("food_log_id").references(() => foodLogs.id),
+  mood: varchar("mood").notNull(), // very-good, good, neutral, bad, very-bad
+  reason: text("reason"), // Optional reason for the mood
+  loggedAt: timestamp("logged_at").defaultNow(),
+});
+
 // Water intake logs
 export const waterLogs = pgTable("water_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -280,7 +290,7 @@ export const communityPostsRelations = relations(communityPosts, ({ one, many })
   comments: many(postComments),
 }));
 
-export const foodLogsRelations = relations(foodLogs, ({ one }) => ({
+export const foodLogsRelations = relations(foodLogs, ({ one, many }) => ({
   user: one(users, {
     fields: [foodLogs.userId],
     references: [users.id],
@@ -288,6 +298,18 @@ export const foodLogsRelations = relations(foodLogs, ({ one }) => ({
   foodItem: one(foodItems, {
     fields: [foodLogs.foodItemId],
     references: [foodItems.id],
+  }),
+  moodLogs: many(moodLogs),
+}));
+
+export const moodLogsRelations = relations(moodLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [moodLogs.userId],
+    references: [users.id],
+  }),
+  foodLog: one(foodLogs, {
+    fields: [moodLogs.foodLogId],
+    references: [foodLogs.id],
   }),
 }));
 
@@ -320,6 +342,11 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
 });
 
 export const insertFoodLogSchema = createInsertSchema(foodLogs).omit({
+  id: true,
+  loggedAt: true,
+});
+
+export const insertMoodLogSchema = createInsertSchema(moodLogs).omit({
   id: true,
   loggedAt: true,
 });
@@ -371,6 +398,8 @@ export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type FoodLog = typeof foodLogs.$inferSelect;
 export type InsertFoodLog = z.infer<typeof insertFoodLogSchema>;
+export type MoodLog = typeof moodLogs.$inferSelect;
+export type InsertMoodLog = z.infer<typeof insertMoodLogSchema>;
 export type WaterLog = typeof waterLogs.$inferSelect;
 export type InsertWaterLog = z.infer<typeof insertWaterLogSchema>;
 export type WeightLog = typeof weightLogs.$inferSelect;

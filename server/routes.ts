@@ -29,6 +29,13 @@ import {
 } from "./auth";
 import { z } from "zod";
 
+// Mood logging schema
+const moodLogSchema = z.object({
+  mood: z.enum(["very-good", "good", "neutral", "bad", "very-bad"]),
+  reason: z.string().optional(),
+  foodLogId: z.string().optional(),
+});
+
 // Session configuration
 const PgSession = connectPgSimple(session);
 
@@ -361,6 +368,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error adding meal:", error);
       res.status(400).json({ 
         message: error.message || "Failed to add meal",
+        errors: error.errors || []
+      });
+    }
+  });
+
+  // Mood logging endpoint
+  app.post('/api/mood-log', requireAuth, async (req: any, res) => {
+    try {
+      const userId = getUserId(req);
+      const moodData = moodLogSchema.parse(req.body);
+      
+      // Create mood log entry
+      const moodLog = await storage.createMoodLog({
+        userId,
+        foodLogId: moodData.foodLogId || null,
+        mood: moodData.mood,
+        reason: moodData.reason || null,
+      });
+
+      res.json({
+        message: "Mood logged successfully",
+        moodLog,
+      });
+    } catch (error: any) {
+      console.error("Error logging mood:", error);
+      res.status(400).json({ 
+        message: error.message || "Failed to log mood",
         errors: error.errors || []
       });
     }

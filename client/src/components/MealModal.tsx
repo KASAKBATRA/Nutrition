@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLanguage } from '@/context/LanguageContext';
+import { MoodTrackerModal } from '@/components/MoodTrackerModal';
 
 // Form validation schema
 const addMealSchema = z.object({
@@ -57,6 +58,7 @@ export function MealModal({ isOpen, onClose, onMealAdded, editingMeal }: MealMod
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedFood, setSelectedFood] = useState<FoodSearchResult | null>(null);
   const [nutritionResult, setNutritionResult] = useState<NutritionResponse['nutrition'] | null>(null);
+  const [showMoodTracker, setShowMoodTracker] = useState(false);
 
   const {
     register,
@@ -137,10 +139,17 @@ export function MealModal({ isOpen, onClose, onMealAdded, editingMeal }: MealMod
       
       if (onMealAdded) onMealAdded();
       
-      // Keep modal open to show nutrition info for a moment, then close
-      setTimeout(() => {
-        handleClose();
-      }, 2000);
+      // Show mood tracker for new meals only (not when editing)
+      if (!editingMeal) {
+        setTimeout(() => {
+          setShowMoodTracker(true);
+        }, 1500);
+      } else {
+        // For edits, close normally
+        setTimeout(() => {
+          handleClose();
+        }, 2000);
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -157,7 +166,47 @@ export function MealModal({ isOpen, onClose, onMealAdded, editingMeal }: MealMod
     setSelectedFood(null);
     setNutritionResult(null);
     setIsSearchOpen(false);
+    setShowMoodTracker(false);
     onClose();
+  };
+
+  const handleMoodSubmit = async (mood: string, reason?: string) => {
+    try {
+      // Save mood data to backend
+      const requestBody: any = { mood };
+      if (reason) {
+        requestBody.reason = reason;
+      }
+      // Don't include foodLogId if we don't have one
+      
+      const response = await fetch('/api/mood-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save mood');
+      }
+      
+      toast({
+        title: "Thank you!",
+        description: "Your feedback has been recorded.",
+      });
+      
+      // Close everything after mood is logged
+      setTimeout(() => {
+        handleClose();
+      }, 1000);
+    } catch (error) {
+      console.error('Error saving mood:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save your mood. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const onSubmit = (data: AddMealFormData) => {
@@ -191,6 +240,7 @@ export function MealModal({ isOpen, onClose, onMealAdded, editingMeal }: MealMod
   ];
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
@@ -385,5 +435,13 @@ export function MealModal({ isOpen, onClose, onMealAdded, editingMeal }: MealMod
         )}
       </DialogContent>
     </Dialog>
+    
+    {/* Mood Tracker Modal */}
+    <MoodTrackerModal
+      isOpen={showMoodTracker}
+      onClose={() => setShowMoodTracker(false)}
+      onSubmit={handleMoodSubmit}
+    />
+  </>
   );
 }
