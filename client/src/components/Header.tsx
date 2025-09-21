@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/context/ThemeContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { useAboutModal } from '@/context/AboutModalContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { HelpDialog } from './HelpDialog';
@@ -24,6 +25,7 @@ export function Header() {
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { toast } = useToast();
+  const { openAboutModal } = useAboutModal();
 
   const handleLogin = () => {
     setLocation('/login');
@@ -102,6 +104,15 @@ export function Header() {
             {!isAuthenticated ? (
               <div className="flex items-center space-x-4">
                 <button
+                  onClick={() => {
+                    console.log('About button clicked, opening modal');
+                    openAboutModal();
+                  }}
+                  className="px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-nutricare-green transition-colors text-sm font-medium"
+                >
+                  About
+                </button>
+                <button
                   onClick={handleLogin}
                   className="px-4 py-2 text-nutricare-green border border-nutricare-green rounded-lg hover:bg-nutricare-green hover:text-white transition-all duration-200"
                 >
@@ -116,6 +127,15 @@ export function Header() {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => {
+                    console.log('About button clicked (authenticated), opening modal');
+                    openAboutModal();
+                  }}
+                  className="px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-nutricare-green transition-colors text-sm font-medium"
+                >
+                  About
+                </button>
                 <div className="flex items-center space-x-2">
                   {user?.profileImageUrl ? (
                     <img

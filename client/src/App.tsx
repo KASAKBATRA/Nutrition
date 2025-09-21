@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { AboutModalProvider, useAboutModal } from "@/context/AboutModalContext";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
@@ -19,9 +20,11 @@ import Community from "@/pages/Community";
 import Appointments from "@/pages/Appointments";
 import Friends from "@/pages/Friends";
 import Reports from "@/pages/Reports";
+import AboutModal from "@/components/AboutModal";
 
-function Router() {
+function AppContent() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { isAboutModalOpen, closeAboutModal } = useAboutModal();
 
   if (isLoading) {
     return (
@@ -37,28 +40,44 @@ function Router() {
   }
 
   return (
-    <Switch>
-      {!isAuthenticated ? (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/register" component={Register} />
-          <Route path="/login" component={Login} />
-          <Route path="/verify-otp" component={VerifyOTP} />
-          <Route path="/forgot-password" component={ForgotPassword} />
-          <Route path="/reset-password" component={ResetPassword} />
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route path="/food-log" component={FoodLog} />
-          <Route path="/community" component={Community} />
-          <Route path="/appointments" component={Appointments} />
-          <Route path="/friends" component={Friends} />
-          <Route path="/reports" component={Reports} />
-        </>
-      )}
-      <Route component={NotFound} />
-    </Switch>
+    <>
+      <Switch>
+        {!isAuthenticated ? (
+          <>
+            <Route path="/" component={Landing} />
+            <Route path="/register" component={Register} />
+            <Route path="/login" component={Login} />
+            <Route path="/verify-otp" component={VerifyOTP} />
+            <Route path="/forgot-password" component={ForgotPassword} />
+            <Route path="/reset-password" component={ResetPassword} />
+          </>
+        ) : (
+          <>
+            <Route path="/" component={Dashboard} />
+            <Route path="/food-log" component={FoodLog} />
+            <Route path="/community" component={Community} />
+            <Route path="/appointments" component={Appointments} />
+            <Route path="/friends" component={Friends} />
+            <Route path="/reports" component={Reports} />
+          </>
+        )}
+        <Route component={NotFound} />
+      </Switch>
+      
+      {/* Global About Modal */}
+      <AboutModal 
+        isOpen={isAboutModalOpen} 
+        onClose={closeAboutModal} 
+      />
+    </>
+  );
+}
+
+function Router() {
+  return (
+    <AboutModalProvider>
+      <AppContent />
+    </AboutModalProvider>
   );
 }
 
