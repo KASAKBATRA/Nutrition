@@ -115,6 +115,7 @@ export interface IStorage {
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointmentStatus(id: string, status: string): Promise<void>;
   getNutritionists(): Promise<Nutritionist[]>;
+  createNutritionist(nutritionist: any): Promise<Nutritionist>;
   
   // Community
   getCommunityPosts(limit?: number): Promise<(CommunityPost & { user: User; isLiked?: boolean })[]>;
@@ -535,6 +536,18 @@ export class DatabaseStorage implements IStorage {
       .from(nutritionists)
       .where(eq(nutritionists.isAvailable, true))
       .orderBy(desc(nutritionists.rating));
+  }
+
+  async createNutritionist(nutritionist: any): Promise<Nutritionist> {
+    const [created] = await db.insert(nutritionists).values({
+      userId: nutritionist.userId,
+      qualifications: nutritionist.qualifications,
+      experience: nutritionist.experience,
+      specialization: nutritionist.specialization,
+      bio: nutritionist.bio,
+      consultationFee: nutritionist.consultationFee,
+    }).returning();
+    return created;
   }
 
   // Community

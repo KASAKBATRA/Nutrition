@@ -8,6 +8,10 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { HelpDialog } from './HelpDialog';
 
+interface HeaderProps {
+  onChatbotOpen?: () => void;
+}
+
 const languageOptions = [
   { code: 'en', label: '🇺🇸 English', name: 'English' },
   { code: 'hi', label: '🇮🇳 Hindi', name: 'हिंदी' },
@@ -17,7 +21,7 @@ const languageOptions = [
   { code: 'gu', label: '🇮🇳 Gujarati', name: 'ગુજરાતી' },
 ];
 
-export function Header() {
+export function Header({ onChatbotOpen }: HeaderProps = {}) {
 
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
@@ -31,24 +35,63 @@ export function Header() {
     setLocation('/login');
   };
 
-  const handleLogout = () => {
-    fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    }).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
-      setLocation('/');
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
       });
-    }).catch(() => {
+      
+      if (response.ok) {
+        // Clear all local data
+        queryClient.clear();
+        queryClient.removeQueries();
+        
+        // Clear any cached user data
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Wait a moment for React Query to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        setLocation('/login');
+        toast({
+          title: "Logged Out",
+          description: "You have been successfully logged out. Please login again to see your data.",
+        });
+      }
+    } catch (error) {
       toast({
         title: "Logout Error",
         description: "There was an error logging out.",
         variant: "destructive",
       });
-    });
+    }
+  };
+
+  const handleNavigationClick = (action: string) => {
+    switch (action) {
+      case 'food':
+        setLocation('/food-log');
+        break;
+      case 'reports':
+        setLocation('/reports');
+        break;
+      case 'appointments':
+        setLocation('/appointments');
+        break;
+      case 'community':
+        setLocation('/community');
+        break;
+      case 'friends':
+        setLocation('/friends');
+        break;
+      case 'chatbot':
+        if (onChatbotOpen) {
+          onChatbotOpen();
+        }
+        break;
+    }
   };
 
   return (
@@ -89,6 +132,56 @@ export function Header() {
             >
               <i className={`fas ${theme === 'light' ? 'fa-moon' : 'fa-sun'}`}></i>
             </button>
+
+            {/* Navigation Icons - only show when authenticated */}
+            {isAuthenticated && (
+              <div className="flex items-center space-x-2">
+                {/* Reports */}
+                <button
+                  onClick={() => handleNavigationClick('reports')}
+                  className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-all duration-200"
+                  title="Reports"
+                >
+                  <i className="fas fa-chart-bar"></i>
+                </button>
+
+                {/* Appointments */}
+                <button
+                  onClick={() => handleNavigationClick('appointments')}
+                  className="p-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-all duration-200"
+                  title="Appointments"
+                >
+                  <i className="fas fa-calendar-check"></i>
+                </button>
+
+                {/* Community */}
+                <button
+                  onClick={() => handleNavigationClick('community')}
+                  className="p-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600 transition-all duration-200"
+                  title="Community Feed"
+                >
+                  <i className="fab fa-instagram"></i>
+                </button>
+
+                {/* Friends */}
+                <button
+                  onClick={() => handleNavigationClick('friends')}
+                  className="p-2 rounded-lg bg-pink-500 text-white hover:bg-pink-600 transition-all duration-200"
+                  title="Friends"
+                >
+                  <i className="fas fa-user-friends"></i>
+                </button>
+
+                {/* AI Chatbot */}
+                <button
+                  onClick={() => handleNavigationClick('chatbot')}
+                  className="p-2 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-all duration-200"
+                  title="AI Chatbot"
+                >
+                  <i className="fas fa-robot"></i>
+                </button>
+              </div>
+            )}
 
             {/* Help Button */}
             <HelpDialog>

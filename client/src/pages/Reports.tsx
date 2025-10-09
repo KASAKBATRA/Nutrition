@@ -497,74 +497,25 @@ export default function Reports() {
       return [0, 100, 0];                   // Dark green for normal
     };
     
-    // Medical nutrition parameters with reference ranges
+    // Medical nutrition parameters with reference ranges (match report template)
+    const proteinEstimate = Math.round(avgCalories * 0.15 / 4); // grams
+    const carbsEstimate = Math.round(avgCalories * 0.5 / 4);
+    const fatsEstimate = Math.round(avgCalories * 0.3 / 9);
+    const sugarEstimate = Math.round(avgCalories * 0.1 / 4);
+    const fiberEstimate = Math.round(avgCalories / 100);
+
     const nutritionTests = [
-      {
-        test: 'Daily Calories',
-        value: avgCalories,
-        unit: 'kcal',
-        refRange: '1800-2200',
-        minRef: 1800,
-        maxRef: 2200
-      },
-      {
-        test: 'Protein (Estimated)',
-        value: Math.round(avgCalories * 0.15 / 4), // 15% of calories from protein
-        unit: 'g',
-        refRange: '50-100',
-        minRef: 50,
-        maxRef: 100
-      },
-      {
-        test: 'Carbohydrates (Est.)',
-        value: Math.round(avgCalories * 0.5 / 4), // 50% of calories from carbs
-        unit: 'g',
-        refRange: '225-325',
-        minRef: 225,
-        maxRef: 325
-      },
-      {
-        test: 'Fat (Estimated)',
-        value: Math.round(avgCalories * 0.3 / 9), // 30% of calories from fat
-        unit: 'g',
-        refRange: '50-80',
-        minRef: 50,
-        maxRef: 80
-      },
-      {
-        test: 'Sugar (Estimated)',
-        value: Math.round(avgCalories * 0.1 / 4), // 10% of calories from sugar
-        unit: 'g',
-        refRange: '<50',
-        minRef: 0,
-        maxRef: 50
-      },
-      {
-        test: 'Fiber (Estimated)',
-        value: Math.round(avgCalories / 100), // Rough fiber estimation
-        unit: 'g',
-        refRange: '25-35',
-        minRef: 25,
-        maxRef: 35
-      },
-      {
-        test: 'Water Intake',
-        value: avgWater,
-        unit: 'L',
-        refRange: '2.0-3.5',
-        minRef: 2.0,
-        maxRef: 3.5
-      },
-      {
-        test: 'BMI',
-        value: bmi || 0,
-        unit: 'kg/m²',
-        refRange: '18.5-24.9',
-        minRef: 18.5,
-        maxRef: 24.9
-      }
+      { key: 'calories', test: 'Calories', value: avgCalories, unit: 'kcal', refRange: '1800–2200', minRef: 1800, maxRef: 2200 },
+      { key: 'protein', test: 'Protein', value: proteinEstimate, unit: 'g', refRange: '50–100 g', minRef: 50, maxRef: 100 },
+      { key: 'carbs', test: 'Carbohydrates', value: carbsEstimate, unit: 'g', refRange: '225–325 g', minRef: 225, maxRef: 325 },
+      { key: 'fats', test: 'Fats', value: fatsEstimate, unit: 'g', refRange: '50–80 g', minRef: 50, maxRef: 80 },
+      { key: 'sugar', test: 'Sugar', value: sugarEstimate, unit: 'g', refRange: '<50 g', minRef: 0, maxRef: 50 },
+      { key: 'fiber', test: 'Fiber', value: fiberEstimate, unit: 'g', refRange: '25–35 g', minRef: 25, maxRef: 35 },
+      { key: 'water', test: 'Water Intake', value: avgWater, unit: 'L', refRange: '2.0–3.5 L', minRef: 2.0, maxRef: 3.5 },
+      { key: 'bmi', test: 'BMI', value: bmi || 0, unit: 'kg/m²', refRange: '18.5–24.9', minRef: 18.5, maxRef: 24.9 }
     ];
 
+    // Render rows
     nutritionTests.forEach((test, index) => {
       // Alternate row background (like medical reports)
       if (index % 2 === 0) {
@@ -601,7 +552,21 @@ export default function Reports() {
       currentY += 11;
     });
     
-    currentY += 15;
+      currentY += 15;
+
+      // Add note below table if any nutrient is too low or too high
+      const tooLow = nutritionTests.filter(t => t.value < t.minRef).map(t => t.test + ` (${t.value}${t.unit})`);
+      const tooHigh = nutritionTests.filter(t => t.value > t.maxRef).map(t => t.test + ` (${t.value}${t.unit})`);
+
+      if (tooLow.length > 0 || tooHigh.length > 0) {
+        const noteLines: string[] = [];
+        if (tooLow.length > 0) noteLines.push(`Low: ${tooLow.join(', ')}`);
+        if (tooHigh.length > 0) noteLines.push(`High: ${tooHigh.join(', ')}`);
+
+        const noteText = `NOTE: ${noteLines.join(' | ')}`;
+        addText(noteText, 20, currentY, { size: 9, color: [200, 50, 50], style: 'bold' });
+        currentY += 12;
+      }
 
     // Medical-style Meal Log Analysis
     // Section header with light green background

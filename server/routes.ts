@@ -106,9 +106,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', async (req, res) => {
     try {
       const { email, password } = loginSchema.parse(req.body);
+      console.log('🔑 LOGIN ATTEMPT for email:', email);
       const user = await loginUser(email, password);
+      console.log('🔑 LOGIN SUCCESS - User ID:', user.id, 'Name:', user.firstName, user.lastName);
       
       req.session.userId = user.id;
+      console.log('🔑 SESSION SET - User ID:', req.session.userId, 'Session ID:', req.session.id);
       req.session.save((err) => {
         if (err) {
           console.error("Session save error:", err);
@@ -132,12 +135,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/auth/logout', (req, res) => {
+    console.log('🔓 LOGOUT REQUEST - Session:', req.session?.id, 'User ID:', req.session?.userId);
     req.session.destroy((err) => {
       if (err) {
         console.error("Logout error:", err);
         return res.status(500).json({ message: "Logout failed" });
       }
       res.clearCookie('connect.sid');
+      console.log('🔓 LOGOUT COMPLETE - Session destroyed');
       res.json({ message: "Logout successful" });
     });
   });
@@ -223,8 +228,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/food-logs', requireAuth, async (req: any, res) => {
     try {
       const userId = getUserId(req);
+      console.log('🍽️ FETCHING food logs for user:', userId);
       const date = req.query.date ? new Date(req.query.date as string) : undefined;
       const logs = await storage.getFoodLogs(userId, date);
+      console.log('🍽️ FOUND', logs.length, 'food logs for user:', userId);
+      if (logs.length > 0) {
+        console.log('🍽️ FIRST LOG belongs to user:', logs[0].userId, 'Meal:', logs[0].mealName);
+      }
       res.json(logs);
     } catch (error) {
       console.error("Error fetching food logs:", error);

@@ -95,6 +95,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { isUnauthorizedError } from '@/lib/authUtils';
 import { apiRequest } from '@/lib/queryClient';
+import { calculateNutritionRequirements, getGenderSpecificTips, getGenderSpecificFoods } from '@/lib/nutritionCalculator';
+import { GenderSpecificMicronutrients } from '@/components/GenderSpecificMicronutrients';
 
 export default function Dashboard() {
   // OCR and Health Classification State (must be inside component)
@@ -251,6 +253,13 @@ export default function Dashboard() {
     retry: false,
   });
 
+  // Get user profile for nutrition calculations
+  const { data: userProfile } = useQuery({
+    queryKey: ['/api/user/profile'],
+    enabled: isAuthenticated,
+    retry: false,
+  });
+
   const { data: weightLogs } = useQuery<WeightLog[]>({
     queryKey: ['/api/weight-logs'],
     enabled: isAuthenticated,
@@ -293,12 +302,42 @@ export default function Dashboard() {
   const latestWeight = weightLogs?.[0]?.weight || 0;
   const latestBMI = weightLogs?.[0]?.bmi || 0;
 
-  // Nutrition goals (can be made configurable later)
-  const calorieGoal = 2000;
-  const proteinGoal = 150; // grams
-  const carbsGoal = 250; // grams  
-  const fatGoal = 65; // grams
-  const waterGoal = 8;
+  // Calculate gender-specific nutrition requirements
+  const getUserNutritionRequirements = () => {
+    if (!user || !userProfile) {
+      // Fallback to sensible default user data so we also get micronutrient targets
+      const defaultUser = {
+        gender: 'female',
+        age: 30,
+        weight: 70,
+        height: 170,
+        activityLevel: 'moderately_active',
+        goal: 'maintenance'
+      } as any;
+
+      return calculateNutritionRequirements(defaultUser);
+    }
+
+    const userData = {
+      gender: (user as any)?.gender || (userProfile as any)?.gender || 'female',
+      age: (user as any)?.age || new Date().getFullYear() - new Date((userProfile as any)?.dateOfBirth || '1990-01-01').getFullYear() || 25,
+      weight: parseFloat((userProfile as any)?.weight?.toString() || latestWeight?.toString() || '70'),
+      height: parseFloat((userProfile as any)?.height?.toString() || '170'),
+      activityLevel: (userProfile as any)?.activityLevel || 'moderately_active',
+      goal: (userProfile as any)?.healthGoals || 'maintenance'
+    };
+
+    return calculateNutritionRequirements(userData);
+  };
+
+  const nutritionRequirements = getUserNutritionRequirements();
+  
+  // Nutrition goals based on gender and profile
+  const calorieGoal = nutritionRequirements.calories;
+  const proteinGoal = nutritionRequirements.protein;
+  const carbsGoal = nutritionRequirements.carbs;
+  const fatGoal = nutritionRequirements.fats;
+  const waterGoal = nutritionRequirements.water;
   
   // Progress calculations
   const calorieProgress = Math.min((totalCalories / calorieGoal) * 100, 100);
@@ -306,6 +345,62 @@ export default function Dashboard() {
   const carbsProgress = Math.min((totalCarbs / carbsGoal) * 100, 100);
   const fatProgress = Math.min((totalFat / fatGoal) * 100, 100);
   const waterProgress = Math.min((totalWater / waterGoal) * 100, 100);
+
+  // Calculate estimated micronutrients based on consumed food
+  const calculateMicronutrients = () => {
+    const meals = dailyNutrition?.meals || [];
+    
+    // Simple estimation based on common food types and portions
+    // This is a basic approximation - in a real app, you'd have a comprehensive food database
+    let estimatedIron = 0;
+    let estimatedCalcium = 0;
+    let estimatedZinc = 0;
+    let estimatedMagnesium = 0;
+    let estimatedPotassium = 0;
+    let estimatedVitaminB12 = 0;
+    
+    meals.forEach((meal: any) => {
+      const mealName = meal.mealName?.toLowerCase() || '';
+      const quantity = parseFloat(meal.quantity) || 1;
+      
+      // Basic estimation based on meal names and types
+      if (mealName.includes('spinach') || mealName.includes('meat') || mealName.includes('chicken')) {
+        estimatedIron += quantity * 2.5; // mg per serving
+      }
+      if (mealName.includes('milk') || mealName.includes('cheese') || mealName.includes('yogurt')) {
+        estimatedCalcium += quantity * 150; // mg per serving
+        estimatedVitaminB12 += quantity * 0.5; // mcg per serving
+      }
+      if (mealName.includes('nuts') || mealName.includes('seeds') || mealName.includes('meat')) {
+        estimatedZinc += quantity * 1.5; // mg per serving
+        estimatedMagnesium += quantity * 50; // mg per serving
+      }
+      if (mealName.includes('banana') || mealName.includes('potato') || mealName.includes('vegetables')) {
+        estimatedPotassium += quantity * 200; // mg per serving
+      }
+      
+      // Base values for any meal (very conservative estimates)
+      estimatedIron += quantity * 0.5;
+      estimatedCalcium += quantity * 20;
+      estimatedZinc += quantity * 0.3;
+      estimatedMagnesium += quantity * 15;
+      estimatedPotassium += quantity * 50;
+      estimatedVitaminB12 += quantity * 0.1;
+    });
+    
+    return {
+      iron: Math.round(estimatedIron * 10) / 10,
+      calcium: Math.round(estimatedCalcium),
+      zinc: Math.round(estimatedZinc * 10) / 10,
+      magnesium: Math.round(estimatedMagnesium),
+      potassium: Math.round(estimatedPotassium),
+      vitaminB12: Math.round(estimatedVitaminB12 * 10) / 10,
+      vitaminD: Math.round((totalCalories / 2000) * 5 * 10) / 10, // Very rough estimate
+      folate: Math.round((totalCalories / 2000) * 200) // Very rough estimate
+    };
+  };
+
+  const currentMicronutrients = calculateMicronutrients();
 
   const getBMIStatus = (bmi: number) => {
     if (bmi < 18.5) return { status: 'Underweight', color: 'text-blue-500' };
@@ -507,6 +602,127 @@ export default function Dashboard() {
             <div className="mt-3 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${fatProgress}%` }}></div>
             </div>
+          </div>
+        </div>
+
+        {/* Gender-Specific Micronutrients - Smaller Cards */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+            <span className="mr-2">{(user as any)?.gender === 'male' ? '♂️' : '♀️'}</span>
+            {(user as any)?.gender === 'male' ? 'Male Key Nutrients' : 'Female Key Nutrients'}
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {/* Dynamic micronutrient cards based on gender */}
+            {(() => {
+              const gender = (user as any)?.gender || (userProfile as any)?.gender || 'female';
+              const micronutrientRequirements = nutritionRequirements.micronutrients;
+              
+              if (gender === 'male') {
+                return [
+                  {
+                    name: 'Zinc',
+                    current: currentMicronutrients.zinc,
+                    target: micronutrientRequirements.zinc,
+                    unit: 'mg',
+                    icon: '🔵',
+                    color: 'blue',
+                    description: 'Supports testosterone and immune function'
+                  },
+                  {
+                    name: 'Magnesium', 
+                    current: currentMicronutrients.magnesium,
+                    target: micronutrientRequirements.magnesium,
+                    unit: 'mg',
+                    icon: '💜',
+                    color: 'purple',
+                    description: 'Essential for muscle and heart health'
+                  },
+                  {
+                    name: 'Potassium',
+                    current: currentMicronutrients.potassium,
+                    target: micronutrientRequirements.potassium,
+                    unit: 'mg',
+                    icon: '⚡',
+                    color: 'orange',
+                    description: 'Supports muscle function and blood pressure'
+                  },
+                  {
+                    name: 'Vitamin B12',
+                    current: currentMicronutrients.vitaminB12,
+                    target: micronutrientRequirements.vitaminB12,
+                    unit: 'mcg',
+                    icon: '💙',
+                    color: 'indigo',
+                    description: 'Boosts energy and metabolism'
+                  }
+                ];
+              } else {
+                return [
+                  {
+                    name: 'Iron',
+                    current: currentMicronutrients.iron,
+                    target: micronutrientRequirements.iron,
+                    unit: 'mg',
+                    icon: '🔴',
+                    color: 'red',
+                    description: 'Essential for oxygen transport'
+                  },
+                  {
+                    name: 'Calcium',
+                    current: currentMicronutrients.calcium,
+                    target: micronutrientRequirements.calcium,
+                    unit: 'mg',
+                    icon: '🤍',
+                    color: 'gray',
+                    description: 'Builds strong bones and teeth'
+                  },
+                  {
+                    name: 'Vitamin D',
+                    current: currentMicronutrients.vitaminD,
+                    target: micronutrientRequirements.vitaminD,
+                    unit: 'IU',
+                    icon: '☀️',
+                    color: 'yellow',
+                    description: 'Supports bone health and immunity'
+                  },
+                  {
+                    name: 'Folate',
+                    current: currentMicronutrients.folate,
+                    target: micronutrientRequirements.folate,
+                    unit: 'mcg',
+                    icon: '💚',
+                    color: 'green',
+                    description: 'Important for cell division'
+                  }
+                ];
+              }
+            })().map((nutrient, index) => {
+              const progress = Math.min((nutrient.current / nutrient.target) * 100, 100);
+              const isLow = progress < 30;
+              
+              return (
+                <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-lg">{nutrient.icon}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${isLow ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400' : 'bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400'}`}>
+                      {isLow ? 'Low' : 'Good'}
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{nutrient.name}</h4>
+                  <div className="flex items-end space-x-1 mb-2">
+                    <span className="text-lg font-bold text-gray-900 dark:text-white">{nutrient.current}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">/ {nutrient.target}{nutrient.unit}</span>
+                  </div>
+                  <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
+                    <div 
+                      className={`bg-${nutrient.color}-500 h-1.5 rounded-full transition-all duration-300`}
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">{nutrient.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -725,6 +941,55 @@ export default function Dashboard() {
               )}
             </div>
 
+            {/* Gender-Specific Nutrition Tips */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                <i className={`fas ${(user as any)?.gender === 'male' || (userProfile as any)?.gender === 'male' ? 'fa-mars text-blue-500' : 'fa-venus text-pink-500'} mr-2`}></i>
+                {(user as any)?.gender === 'male' || (userProfile as any)?.gender === 'male' ? '🟢 Male Nutrition Tips' : '🟣 Female Nutrition Tips'}
+              </h3>
+              
+              {/* Daily Goals Summary */}
+              <div className="mb-4 p-3 bg-gradient-to-r from-nutricare-green/10 to-nutricare-light/10 rounded-lg">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">Your Daily Goals</h4>
+                <div className="text-sm space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Calories:</span>
+                    <span className="font-medium">{calorieGoal} kcal</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Protein:</span>
+                    <span className="font-medium">{proteinGoal}g</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Water:</span>
+                    <span className="font-medium">{waterGoal} glasses</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Gender-specific tips */}
+              <div className="space-y-2">
+                {getGenderSpecificTips((user as any)?.gender || (userProfile as any)?.gender || 'female').slice(0, 3).map((tip, index) => (
+                  <div key={index} className="text-sm text-gray-600 dark:text-gray-400 flex items-start">
+                    <span className="mr-2">{tip.split(' ')[0]}</span>
+                    <span>{tip.split(' ').slice(1).join(' ')}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Focus foods */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">Focus Foods</h4>
+                <div className="flex flex-wrap gap-1">
+                  {getGenderSpecificFoods((user as any)?.gender || (userProfile as any)?.gender || 'female').focus.slice(0, 2).map((food, index) => (
+                    <span key={index} className="text-xs px-2 py-1 bg-nutricare-green/20 text-nutricare-dark rounded-full">
+                      {food.split(' (')[0]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
             {/* Friends Activity */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('friends.title')}</h3>
@@ -752,6 +1017,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
       </div>
 
       {/* Meal Modal */}

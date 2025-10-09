@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Header } from './Header';
 import { FloatingElements } from './FloatingElements';
-import { CircularMenu } from './CircularMenu';
 import { Chatbot } from './Chatbot';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -17,7 +16,7 @@ export function Layout({ children, showSidebar = false }: LayoutProps) {
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
       <FloatingElements />
-      <Header />
+      <Header onChatbotOpen={() => setIsChatbotOpen(true)} />
       
       <div className="flex min-h-screen relative z-10">
         {/* Main Content */}
@@ -25,11 +24,6 @@ export function Layout({ children, showSidebar = false }: LayoutProps) {
           {children}
         </div>
       </div>
-
-      {/* Circular Menu - Only show when authenticated */}
-      {isAuthenticated && (
-        <CircularMenu onChatbotOpen={() => setIsChatbotOpen(true)} />
-      )}
 
       {/* Chatbot */}
       <Chatbot isOpen={isChatbotOpen} onClose={() => setIsChatbotOpen(false)} />
