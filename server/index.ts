@@ -1,4 +1,9 @@
-import "dotenv/config";
+import dotenv from 'dotenv';
+
+// Load local .env only when not in production so production hosts control env vars
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
