@@ -1,0 +1,72 @@
+[
+  {
+    "sid": "uXDV6121Gh_B-XNkZagw-8KCPQ87NOtO",
+    "sess": {
+      "cookie": {
+        "path": "/",
+        "secure": false,
+        "expires": "2025-10-22T12:17:47.656Z",
+        "httpOnly": true,
+        "originalMaxAge": 2592000000
+      },
+      "userId": "739031cb-fd60-46bb-a62a-b20a218e93a9"
+    },
+    "expire": "2025-11-08T01:06:58.000Z"
+  },
+  {
+    "sid": "S03iNUlc-xDuCG8vIzllwrVEDZQPOCIQ",
+    "sess": {
+      "cookie": {
+        "path": "/",
+        "secure": false,
+        "expires": "2025-11-08T07:05:09.256Z",
+        "httpOnly": true,
+        "originalMaxAge": 2592000000
+      },
+      "userId": "282cf7dc-0170-4ee0-8736-5c61f2e6b237"
+    },
+    "expire": "2025-11-08T01:37:23.000Z"
+  },
+  {
+    "sid": "FIT_xXHJDRTuYSPdgXyLPdeD6_8-1C-Z",
+    "sess": {
+      "cookie": {
+        "path": "/",
+        "secure": true,
+        "expires": "2025-11-08T09:17:40.981Z",
+        "httpOnly": true,
+        "originalMaxAge": 2592000000
+      },
+      "userId": "9318c4ad-7ee4-4388-8854-dbd25ce83fdf"
+    },
+    "expire": "2025-11-08T03:47:41.000Z"
+  },
+  {
+    "sid": "TZI8nhVCl2BC3X1O_23ykjG3aMdbFys8",
+    "sess": {
+      "cookie": {
+        "path": "/",
+        "secure": false,
+        "expires": "2025-11-22T20:29:48.397Z",
+        "httpOnly": true,
+        "originalMaxAge": 2592000000
+      },
+      "userId": "aa168e09-6344-4a6e-9d6a-0c09d85b37c4"
+    },
+    "expire": "2025-11-24T01:09:17.000Z"
+  },
+  {
+    "sid": "YmCECLgFdd9rHZFWl751hTHj0IVLLXaL",
+    "sess": {
+      "cookie": {
+        "path": "/",
+        "secure": true,
+        "expires": "2025-11-08T09:18:02.309Z",
+        "httpOnly": true,
+        "originalMaxAge": 2592000000
+      },
+      "userId": "9318c4ad-7ee4-4388-8854-dbd25ce83fdf"
+    },
+    "expire": "2025-11-08T03:48:03.000Z"
+  }
+]

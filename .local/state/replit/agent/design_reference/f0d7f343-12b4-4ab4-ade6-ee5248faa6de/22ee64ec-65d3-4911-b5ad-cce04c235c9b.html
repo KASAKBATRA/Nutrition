@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriCare++ - Smart Health & Nutrition Companion</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/heroicons@2.0.16/24/outline/index.js" type="module"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    'inter': ['Inter', 'sans-serif'],
+                },
+                colors: {
+                    'nutricare': {
+                        50: '#f0fdf4',
+                        100: '#dcfce7',
+                        200: '#bbf7d0',
+                        300: '#86efac',
+                        400: '#4ade80',
+                        500: '#22c55e',
+                        600: '#16a34a',
+                        700: '#15803d',
+                        800: '#166534',
+                        900: '#14532d',
+                    }
+                },
+                animation: {
+                    'float': 'float 6s ease-in-out infinite',
+                    'pulse-slow': 'pulse 3s infinite',
+                    'bounce-slow': 'bounce 2s infinite',
+                }
+            }
+        }
+    };
+    </script>
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+        
+        .floating-element {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .floating-element:nth-child(2n) {
+            animation-delay: -2s;
+        }
+        
+        .floating-element:nth-child(3n) {
+            animation-delay: -4s;
+        }
+        
+        .circular-menu {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .menu-item {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-item:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body class="font-inter bg-gradient-to-br from-nutricare-50 to-white min-h-screen overflow-x-hidden">
+    <!-- @COMPONENT: FloatingBackgroundElements -->
+    <div class="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <!-- Modern fresh avocado cut in half showing the pit -->
+        <div class="floating-element absolute top-20 left-20 opacity-20">
+            <img src="https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?ixlib=rb-4.0.3&auto=format&fit=crop&w=80&h=80" alt="Fresh avocado" class="w-20 h-20 rounded-full" />
+        </div>
+        
+        <!-- Colorful array of fresh vegetables on white background -->
+        <div class="floating-element absolute top-40 right-32 opacity-15">
+            <img src="https://images.unsplash.com/photo-1540420773420-3366772f4999?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60" alt="Fresh vegetables" class="w-16 h-16 rounded-full" />
+        </div>
+        
+        <!-- Fresh green spinach leaves on white background -->
+        <div class="floating-element absolute bottom-32 left-40 opacity-25">
+            <img src="https://images.unsplash.com/photo-1576045057995-568f588f82fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=70&h=70" alt="Green leafy spinach" class="w-18 h-18 rounded-full" />
+        </div>
+        
+        <!-- Vibrant orange carrots with green tops -->
+        <div class="floating-element absolute top-60 left-1/3 opacity-20">
+            <img src="https://images.unsplash.com/photo-1582515073490-39981397c445?ixlib=rb-4.0.3&auto=format&fit=crop&w=50&h=50" alt="Fresh orange carrots" class="w-14 h-14 rounded-full" />
+        </div>
+        
+        <!-- Fresh green broccoli florets close-up -->
+        <div class="floating-element absolute bottom-60 right-20 opacity-15">
+            <img src="https://images.unsplash.com/photo-1628773822503-930a7eaecf80?ixlib=rb-4.0.3&auto=format&fit=crop&w=65&h=65" alt="Green broccoli florets" class="w-16 h-16 rounded-full" />
+        </div>
+        
+        <!-- Variety of colorful bell peppers -->
+        <div class="floating-element absolute top-1/3 right-1/4 opacity-20">
+            <img src="https://pixabay.com/get/gced707a46c3a77955eef0d29c831d80957dff41d10e92b7baabdd9324cccdfb0588b878582b8c89da5e0113bb922867c51b893d3c05784a94fd07b025cbf3f91_1280.jpg" alt="Colorful bell peppers" class="w-14 h-14 rounded-full" />
+        </div>
+        
+        <!-- Fresh red tomatoes on the vine -->
+        <div class="floating-element absolute bottom-40 left-1/4 opacity-25">
+            <img src="https://images.unsplash.com/photo-1607305387299-a3d9611cd469?ixlib=rb-4.0.3&auto=format&fit=crop&w=75&h=75" alt="Fresh red tomatoes" class="w-18 h-18 rounded-full" />
+        </div>
+        
+        <!-- Fresh green apple with water droplets -->
+        <div class="floating-element absolute top-1/2 left-16 opacity-20">
+            <img src="https://images.unsplash.com/photo-1570197788417-0e82375c9371?ixlib=rb-4.0.3&auto=format&fit=crop&w=60&h=60" alt="Fresh green apple" class="w-15 h-15 rounded-full" />
+        </div>
+    </div>
+    <!-- @END_COMPONENT: FloatingBackgroundElements -->
+
+    <!-- @COMPONENT: Header -->
+    <header class="relative z-10 bg-white/80 backdrop-blur-sm border-b border-nutricare-200 sticky top-0">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo and App Name -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-nutricare-500 to-nutricare-600 rounded-xl flex items-center justify-center">
+                        <span class="text-white font-bold text-xl">N+</span>
+                    </div>
+                    <h1 class="text-2xl font-bold text-nutricare-800">NutriCare++</h1>
+                </div>
+                
+                <!-- Language Toggle and Auth Buttons -->
+                <div class="flex items-center space-x-4">
+                    <!-- Language Toggle -->
+                    <select class="bg-nutricare-50 border border-nutricare-200 rounded-lg px-3 py-2 text-sm font-medium text-nutricare-700 focus:ring-2 focus:ring-nutricare-500 focus:border-transparent">
+                        <option value="en">English</option>
+                        <option value="hi">हिंदी</option>
+                        <option value="ur">اردو</option>
+                        <option value="pa">ਪੰਜਾਬੀ</option>
+                        <option value="mr">मराठी</option>
+                        <option value="gu">ગુજરાતી</option>
+                    </select>
+                    
+                    <!-- Auth Buttons -->
+                    <button class="text-nutricare-700 hover:text-nutricare-800 font-medium transition-colors duration-200">
+                        Sign In
+                    </button>
+                    <button class="bg-nutricare-600 hover:bg-nutricare-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg">
+                        Register
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- @END_COMPONENT: Header -->
+
+    <div class="relative z-10 flex min-h-screen">
+        <!-- @COMPONENT: MotivationalQuotes -->
+        <div class="hidden lg:block w-80 bg-white/60 backdrop-blur-sm border-r border-nutricare-200 p-6">
+            <h3 class="text-lg font-semibold text-nutricare-800 mb-6">Daily Motivation</h3>
+            <div id="quotes-container" class="space-y-4">
+                <div class="quote-item bg-gradient-to-r from-nutricare-100 to-nutricare-50 p-4 rounded-xl border border-nutricare-200 shadow-sm">
+                    <p class="text-nutricare-800 font-medium italic">"Let food be thy medicine and medicine be thy food."</p>
+                    <p class="text-nutricare-600 text-sm mt-2">- Hippocrates</p>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: MotivationalQuotes -->
+
+        <!-- @COMPONENT: MainContent -->
+        <div class="flex-1 p-4 lg:p-8">
+            <!-- Dashboard Header -->
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Welcome back, Alex!</h2>
+                <p class="text-gray-600">Here's your health overview for today</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- @COMPONENT: StatCard [calories] -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-nutricare-100 hover:shadow-lg transition-all duration-300 hover:border-nutricare-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Calories Today</p>
+                            <p class="text-2xl font-bold text-nutricare-600" data-bind="stats.calories">1,847</p>
+                            <p class="text-xs text-gray-500">Goal: 2,100</p>
+                        </div>
+                        <div class="w-12 h-12 bg-nutricare-100 rounded-lg flex items-center justify-center">
+                            🔥
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="bg-nutricare-100 rounded-full h-2">
+                            <div class="bg-nutricare-500 h-2 rounded-full" style="width: 88%"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: StatCard -->
+
+                <!-- @COMPONENT: StatCard [water] -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-nutricare-100 hover:shadow-lg transition-all duration-300 hover:border-nutricare-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Water Intake</p>
+                            <p class="text-2xl font-bold text-nutricare-600" data-bind="stats.water">6.5L</p>
+                            <p class="text-xs text-gray-500">Goal: 8L</p>
+                        </div>
+                        <div class="w-12 h-12 bg-nutricare-100 rounded-lg flex items-center justify-center">
+                            💧
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="bg-nutricare-100 rounded-full h-2">
+                            <div class="bg-nutricare-500 h-2 rounded-full" style="width: 81%"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: StatCard -->
+
+                <!-- @COMPONENT: StatCard [weight] -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-nutricare-100 hover:shadow-lg transition-all duration-300 hover:border-nutricare-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">Weight</p>
+                            <p class="text-2xl font-bold text-nutricare-600" data-bind="stats.weight">72.3kg</p>
+                            <p class="text-xs text-green-600">↓ 0.5kg this week</p>
+                        </div>
+                        <div class="w-12 h-12 bg-nutricare-100 rounded-lg flex items-center justify-center">
+                            ⚖️
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: StatCard -->
+
+                <!-- @COMPONENT: StatCard [bmi] -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-nutricare-100 hover:shadow-lg transition-all duration-300 hover:border-nutricare-300">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-medium text-gray-600">BMI</p>
+                            <p class="text-2xl font-bold text-nutricare-600" data-bind="stats.bmi">22.8</p>
+                            <p class="text-xs text-nutricare-600">Normal Range</p>
+                        </div>
+                        <div class="w-12 h-12 bg-nutricare-100 rounded-lg flex items-center justify-center">
+                            📊
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: StatCard -->
+            </div>
+
+            <!-- Food Log and Progress Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- @COMPONENT: FoodLogCard -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-nutricare-100">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Today's Meals</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-nutricare-50 rounded-lg border border-nutricare-100">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">🍳</span>
+                                <div>
+                                    <p class="font-medium text-gray-900">Breakfast</p>
+                                    <p class="text-sm text-gray-600">Oatmeal with berries</p>
+                                </div>
+                            </div>
+                            <span class="text-nutricare-600 font-medium">420 cal</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-nutricare-50 rounded-lg border border-nutricare-100">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">🥗</span>
+                                <div>
+                                    <p class="font-medium text-gray-900">Lunch</p>
+                                    <p class="text-sm text-gray-600">Grilled chicken salad</p>
+                                </div>
+                            </div>
+                            <span class="text-nutricare-600 font-medium">650 cal</span>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-gray-100 rounded-lg border border-gray-200 opacity-60">
+                            <div class="flex items-center space-x-3">
+                                <span class="text-2xl">🍽️</span>
+                                <div>
+                                    <p class="font-medium text-gray-700">Dinner</p>
+                                    <p class="text-sm text-gray-500">Not logged yet</p>
+                                </div>
+                            </div>
+                            <button class="text-nutricare-600 font-medium text-sm hover:text-nutricare-700">Add</button>
+                        </div>
+                    </div>
+                    
+                    <button class="w-full mt-4 bg-nutricare-600 hover:bg-nutricare-700 text-white py-2 px-4 rounded-lg font-medium transition-colors duration-200">
+                        Log New Meal
+                    </button>
+                </div>
+                <!-- @END_COMPONENT: FoodLogCard -->
+
+                <!-- @COMPONENT: ProgressChart -->
+                <div class="bg-white rounded-xl shadow-md p-6 border border-nutricare-100">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Weekly Progress</h3>
+                    <!-- Health tracking charts visualization showing weight loss progress over 7 days -->
+                    <div class="h-48 bg-gradient-to-r from-nutricare-50 to-nutricare-100 rounded-lg flex items-center justify-center border border-nutricare-200">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200" alt="Health progress charts and analytics" class="rounded-lg opacity-80" />
+                    </div>
+                    <div class="mt-4 grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <p class="text-sm text-gray-600">Avg Calories</p>
+                            <p class="font-semibold text-nutricare-600">1,892</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Weight Lost</p>
+                            <p class="font-semibold text-nutricare-600">1.2kg</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Active Days</p>
+                            <p class="font-semibold text-nutricare-600">6/7</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: ProgressChart -->
+            </div>
+
+            <!-- Community Feed Preview -->
+            <div class="bg-white rounded-xl shadow-md p-6 border border-nutricare-100 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">Community Feed</h3>
+                    <button class="text-nutricare-600 hover:text-nutricare-700 font-medium text-sm">View All</button>
+                </div>
+                
+                <!-- @MAP: communityPosts.map(post => ( -->
+                <div class="space-y-4">
+                    <div class="border-b border-gray-100 pb-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-10 h-10 bg-nutricare-100 rounded-full flex items-center justify-center">
+                                <span class="text-nutricare-600 font-medium">SM</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2">
+                                    <p class="font-medium text-gray-900">Sarah Miller</p>
+                                    <span class="text-sm text-gray-500">2h ago</span>
+                                </div>
+                                <p class="text-gray-700 mt-1">Just completed my 30-day healthy eating challenge! 🎉 Lost 3kg and feeling amazing!</p>
+                                <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                    <button class="flex items-center space-x-1 hover:text-nutricare-600">
+                                        <span>❤️</span><span>12</span>
+                                    </button>
+                                    <button class="flex items-center space-x-1 hover:text-nutricare-600">
+                                        <span>💬</span><span>3</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="border-b border-gray-100 pb-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-10 h-10 bg-nutricare-100 rounded-full flex items-center justify-center">
+                                <span class="text-nutricare-600 font-medium">JD</span>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-2">
+                                    <p class="font-medium text-gray-900">Dr. Jennifer Davis</p>
+                                    <span class="text-xs bg-nutricare-100 text-nutricare-700 px-2 py-1 rounded-full">Nutritionist</span>
+                                    <span class="text-sm text-gray-500">4h ago</span>
+                                </div>
+                                <p class="text-gray-700 mt-1">💡 Pro tip: Start your morning with a glass of lemon water to boost your metabolism!</p>
+                                <div class="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                                    <button class="flex items-center space-x-1 hover:text-nutricare-600">
+                                        <span>❤️</span><span>28</span>
+                                    </button>
+                                    <button class="flex items-center space-x-1 hover:text-nutricare-600">
+                                        <span>💬</span><span>8</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_MAP )) -->
+            </div>
+
+            <!-- Appointments Section -->
+            <div class="bg-white rounded-xl shadow-md p-6 border border-nutricare-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900">Upcoming Appointments</h3>
+                    <button class="bg-nutricare-600 hover:bg-nutricare-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200">
+                        Book Appointment
+                    </button>
+                </div>
+                
+                <div class="bg-gradient-to-r from-nutricare-50 to-nutricare-100 p-4 rounded-lg border border-nutricare-200">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                                <span class="text-nutricare-600 font-medium">DR</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Dr. Rachel Green</p>
+                                <p class="text-sm text-gray-600">Certified Nutritionist</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium text-gray-900">Tomorrow</p>
+                            <p class="text-sm text-gray-600">3:00 PM - 4:00 PM</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: MainContent -->
+
+        <!-- @COMPONENT: CircularFloatingMenu -->
+        <div class="fixed bottom-8 right-8 z-20">
+            <div class="circular-menu bg-white/80 backdrop-blur-sm border border-nutricare-200 shadow-xl">
+                <!-- Center Button -->
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-nutricare-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg cursor-pointer hover:bg-nutricare-700 transition-all duration-300">
+                    N+
+                </div>
+                
+                <!-- Menu Items positioned around the circle -->
+                <div class="menu-item bg-nutricare-100 text-nutricare-700 hover:bg-nutricare-200" style="top: 10px; left: 50%; transform: translateX(-50%);" title="Log Food">
+                    🍽️<br><span class="text-xs">Food</span>
+                </div>
+                
+                <div class="menu-item bg-nutricare-100 text-nutricare-700 hover:bg-nutricare-200" style="top: 25px; right: 25px;" title="Reports">
+                    📊<br><span class="text-xs">Reports</span>
+                </div>
+                
+                <div class="menu-item bg-nutricare-100 text-nutricare-700 hover:bg-nutricare-200" style="top: 50%; right: 10px; transform: translateY(-50%);" title="Appointments">
+                    📅<br><span class="text-xs">Meet</span>
+                </div>
+                
+                <div class="menu-item bg-nutricare-100 text-nutricare-700 hover:bg-nutricare-200" style="bottom: 25px; right: 25px;" title="Community Feed">
+                    👥<br><span class="text-xs">Feed</span>
+                </div>
+                
+                <div class="menu-item bg-nutricare-100 text-nutricare-700 hover:bg-nutricare-200" style="bottom: 10px; left: 50%; transform: translateX(-50%);" title="Friends">
+                    💚<br><span class="text-xs">Friends</span>
+                </div>
+                
+                <div class="menu-item bg-nutricare-100 text-nutricare-700 hover:bg-nutricare-200" style="bottom: 25px; left: 25px;" title="AI Chatbot">
+                    🤖<br><span class="text-xs">AI</span>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: CircularFloatingMenu -->
+    </div>
+
+    <!-- @COMPONENT: AIChatbot -->
+    <div id="chatbot-container" class="fixed bottom-8 left-8 z-20">
+        <!-- Chatbot Toggle Button -->
+        <div id="chatbot-toggle" class="w-16 h-16 bg-nutricare-600 hover:bg-nutricare-700 rounded-full flex items-center justify-center text-white shadow-lg cursor-pointer transition-all duration-300 hover:scale-110">
+            <span class="text-2xl">🤖</span>
+        </div>
+        
+        <!-- Chatbot Window (Initially Hidden) -->
+        <div id="chatbot-window" class="hidden absolute bottom-20 left-0 w-80 bg-white rounded-xl shadow-2xl border border-nutricare-200">
+            <div class="bg-nutricare-600 text-white p-4 rounded-t-xl">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl">🤖</span>
+                        <span class="font-medium">NutriBot</span>
+                    </div>
+                    <button id="close-chat" class="text-white hover:text-gray-200">✕</button>
+                </div>
+            </div>
+            
+            <div class="p-4 h-64 overflow-y-auto bg-gray-50">
+                <div class="bg-white p-3 rounded-lg shadow-sm mb-3">
+                    <p class="text-sm text-gray-800">Hello! I'm here to help you with your nutrition and health goals. What would you like to know? 🌱</p>
+                </div>
+            </div>
+            
+            <div class="p-4 border-t border-gray-200">
+                <div class="flex space-x-2">
+                    <input type="text" placeholder="Ask me anything about nutrition..." class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-nutricare-500 focus:border-transparent" />
+                    <button class="bg-nutricare-600 hover:bg-nutricare-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AIChatbot -->
+
+    <script>
+        // Motivational Quotes Rotation System
+        (function() {
+            const quotes = [
+                { text: "Let food be thy medicine and medicine be thy food.", author: "Hippocrates" },
+                { text: "The groundwork for all happiness is good health.", author: "Leigh Hunt" },
+                { text: "Take care of your body. It's the only place you have to live.", author: "Jim Rohn" },
+                { text: "Health is a state of complete harmony of the body, mind and spirit.", author: "B.K.S. Iyengar" },
+                { text: "The first wealth is health.", author: "Ralph Waldo Emerson" },
+                { text: "A healthy outside starts from the inside.", author: "Robert Urich" },
+                { text: "Your body is your temple. Keep it pure and clean for the soul to reside in.", author: "B.K.S. Iyengar" }
+            ];
+            
+            let currentQuoteIndex = 0;
+            const quotesContainer = document.getElementById('quotes-container');
+            
+            function updateQuote() {
+                if (quotesContainer) {
+                    const quote = quotes[currentQuoteIndex];
+                    quotesContainer.innerHTML = `
+                        <div class="quote-item bg-gradient-to-r from-nutricare-100 to-nutricare-50 p-4 rounded-xl border border-nutricare-200 shadow-sm opacity-0 transition-opacity duration-500">
+                            <p class="text-nutricare-800 font-medium italic">"${quote.text}"</p>
+                            <p class="text-nutricare-600 text-sm mt-2">- ${quote.author}</p>
+                        </div>
+                    `;
+                    
+                    // Fade in effect
+                    setTimeout(() => {
+                        const quoteElement = quotesContainer.querySelector('.quote-item');
+                        if (quoteElement) {
+                            quoteElement.classList.remove('opacity-0');
+                            quoteElement.classList.add('opacity-100');
+                        }
+                    }, 100);
+                    
+                    currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+                }
+            }
+            
+            // Initial quote load
+            updateQuote();
+            
+            // Rotate quotes every 10 seconds
+            setInterval(updateQuote, 10000);
+        })();
+
+        // Chatbot Toggle Functionality
+        (function() {
+            const chatbotToggle = document.getElementById('chatbot-toggle');
+            const chatbotWindow = document.getElementById('chatbot-window');
+            const closeChat = document.getElementById('close-chat');
+            
+            if (chatbotToggle && chatbotWindow) {
+                chatbotToggle.addEventListener('click', () => {
+                    chatbotWindow.classList.toggle('hidden');
+                });
+            }
+            
+            if (closeChat && chatbotWindow) {
+                closeChat.addEventListener('click', () => {
+                    chatbotWindow.classList.add('hidden');
+                });
+            }
+        })();
+
+        // Circular Menu Interactions
+        (function() {
+            const menuItems = document.querySelectorAll('.menu-item');
+            
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const title = this.getAttribute('title');
+                    // TODO: Implement navigation logic based on menu item
+                    console.log(`Navigate to: ${title}`);
+                });
+            });
+        })();
+
+        // Stats Animation on Load
+        (function() {
+            const animateStats = () => {
+                const progressBars = document.querySelectorAll('.bg-nutricare-500');
+                progressBars.forEach(bar => {
+                    const width = bar.style.width;
+                    bar.style.width = '0%';
+                    setTimeout(() => {
+                        bar.style.width = width;
+                        bar.style.transition = 'width 1s ease-in-out';
+                    }, 500);
+                });
+            };
+            
+            // Animate stats on page load
+            window.addEventListener('load', animateStats);
+        })();
+
+        // Responsive Menu Handling
+        (function() {
+            const circularMenu = document.querySelector('.circular-menu');
+            
+            function adjustMenuForMobile() {
+                if (window.innerWidth < 768) {
+                    if (circularMenu) {
+                        circularMenu.style.transform = 'scale(0.8)';
+                    }
+                } else {
+                    if (circularMenu) {
+                        circularMenu.style.transform = 'scale(1)';
+                    }
+                }
+            }
+            
+            window.addEventListener('resize', adjustMenuForMobile);
+            adjustMenuForMobile(); // Initial call
+        })();
+    </script>
+</body>
+</html>
