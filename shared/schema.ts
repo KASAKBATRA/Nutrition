@@ -243,6 +243,7 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+<<<<<<< HEAD
 // User utensil calibration mapping
 export const userUtensilMapping = pgTable("user_utensil_mapping", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -252,6 +253,8 @@ export const userUtensilMapping = pgTable("user_utensil_mapping", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+=======
+>>>>>>> 35e97f6b31d334650b771f972340bf7e08c036aa
 // Relations
 export const usersRelations = relations(users, ({ one, many }) => ({
   profile: one(userProfiles, {
@@ -424,6 +427,7 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type Nutritionist = typeof nutritionists.$inferSelect;
 export type FoodItem = typeof foodItems.$inferSelect;
+<<<<<<< HEAD
 export type UserUtensilMapping = typeof userUtensilMapping.$inferSelect;
 export type InsertUserUtensilMapping = z.infer<typeof insertUserUtensilMappingSchema>;
 
@@ -432,3 +436,5 @@ export const insertUserUtensilMappingSchema = createInsertSchema(userUtensilMapp
   id: true,
   createdAt: true,
 });
+=======
+>>>>>>> 35e97f6b31d334650b771f972340bf7e08c036aa
