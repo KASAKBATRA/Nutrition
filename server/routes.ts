@@ -100,6 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ emailUserMasked: masked });
     });
   }
+
   // Auth routes
   app.post('/api/auth/register', async (req, res) => {
     try {

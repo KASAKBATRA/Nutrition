@@ -1,16 +1,7 @@
-<<<<<<< HEAD
 // Ensure dotenv runs before other modules so environment variables
 // (like DATABASE_URL) are available during module initialization.
 // We use the side-effect import which runs dotenv.config() immediately.
 import 'dotenv/config';
-=======
-import dotenv from 'dotenv';
-
-// Load local .env only when not in production so production hosts control env vars
-if (process.env.NODE_ENV !== 'production') {
-  dotenv.config();
-}
->>>>>>> 35e97f6b31d334650b771f972340bf7e08c036aa
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
